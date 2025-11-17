@@ -19,8 +19,8 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Layout />}>
-          <Route index element={<Dashboard />} />
+        <Route path="/" element={<Dashboard />} />
+        <Route element={<Layout />}>
           <Route path="home" element={<Home />} />
           <Route path="about" element={<About />} />
           <Route path="prompt-editor" element={<PromptEditorPage />} />

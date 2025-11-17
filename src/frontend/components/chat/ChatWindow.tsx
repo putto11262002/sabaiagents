@@ -1,5 +1,4 @@
 import React, { useRef, useEffect } from 'react';
-import { ScrollArea } from '@/components/ui/scroll-area.js';
 import { ChatMessage } from './ChatMessage.js';
 import { ChatInput } from './ChatInput.js';
 import type { Message } from '@/types/agent.js';
@@ -25,7 +24,7 @@ export function ChatWindow({
 
   return (
     <div className="flex flex-col h-full">
-      <ScrollArea className="flex-1" ref={scrollRef}>
+      <div ref={scrollRef} className="flex-1 overflow-y-auto">
         {messages.length === 0 ? (
           <div className="flex items-center justify-center h-full text-muted-foreground">
             <div className="text-center space-y-2">
@@ -34,7 +33,7 @@ export function ChatWindow({
             </div>
           </div>
         ) : (
-          <div className="space-y-0">
+          <div>
             {messages.map((message, index) => (
               <ChatMessage key={index} message={message} />
             ))}
@@ -52,7 +51,7 @@ export function ChatWindow({
             )}
           </div>
         )}
-      </ScrollArea>
+      </div>
       <ChatInput
         onSend={onSendMessage}
         disabled={isLoading}

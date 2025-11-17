@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button.js';
 import { Separator } from '@/components/ui/separator.js';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs.js';
-import { ScrollArea } from '@/components/ui/scroll-area.js';
 import { Plus, Settings } from 'lucide-react';
 
 // Agent components
@@ -209,8 +208,8 @@ export default function Dashboard() {
     <div className="flex h-screen bg-background">
       {/* Sidebar - Agents */}
       <div className="w-80 border-r flex flex-col">
-        <div className="p-4 border-b">
-          <div className="flex items-center justify-between mb-4">
+        <div className="p-4 border-b flex-shrink-0">
+          <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold">Agents</h2>
             <Button
               size="sm"
@@ -224,7 +223,7 @@ export default function Dashboard() {
             </Button>
           </div>
         </div>
-        <ScrollArea className="flex-1">
+        <div className="flex-1 overflow-y-auto">
           <div className="p-4 space-y-3">
             {agents.map((agent) => (
               <AgentCard
@@ -235,18 +234,18 @@ export default function Dashboard() {
               />
             ))}
           </div>
-        </ScrollArea>
+        </div>
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col min-w-0">
         {/* Header */}
-        <div className="p-4 border-b">
+        <div className="p-4 border-b flex-shrink-0">
           <div className="flex items-center justify-between">
-            <div>
+            <div className="min-w-0">
               <h1 className="text-2xl font-bold">Dashboard</h1>
               {selectedAgent && (
-                <p className="text-sm text-muted-foreground mt-1">
+                <p className="text-sm text-muted-foreground mt-1 truncate">
                   Active Agent: {selectedAgent.name}
                 </p>
               )}
@@ -260,14 +259,14 @@ export default function Dashboard() {
                 }}
               >
                 <Settings className="h-4 w-4 mr-1" />
-                Agent Details
+                Details
               </Button>
             )}
           </div>
         </div>
 
         {/* Content Area */}
-        <div className="flex-1 flex flex-col overflow-hidden">
+        <div className="flex-1 overflow-hidden">
           {!selectedAgent ? (
             <div className="flex items-center justify-center h-full text-muted-foreground">
               <div className="text-center space-y-2">
@@ -276,8 +275,8 @@ export default function Dashboard() {
               </div>
             </div>
           ) : (
-            <Tabs defaultValue="chat" className="flex-1 flex flex-col">
-              <div className="border-b px-4">
+            <Tabs defaultValue="chat" className="h-full flex flex-col">
+              <div className="border-b px-4 flex-shrink-0">
                 <TabsList>
                   <TabsTrigger value="chat">Chat</TabsTrigger>
                   <TabsTrigger value="sessions">Sessions</TabsTrigger>
@@ -285,7 +284,7 @@ export default function Dashboard() {
                 </TabsList>
               </div>
 
-              <TabsContent value="chat" className="flex-1 m-0 overflow-hidden">
+              <TabsContent value="chat" className="flex-1 m-0 data-[state=active]:flex data-[state=inactive]:hidden">
                 <ChatWindow
                   messages={messages}
                   onSendMessage={handleSendMessage}
@@ -293,7 +292,7 @@ export default function Dashboard() {
                 />
               </TabsContent>
 
-              <TabsContent value="sessions" className="flex-1 m-0 overflow-hidden">
+              <TabsContent value="sessions" className="flex-1 m-0 data-[state=active]:flex data-[state=inactive]:hidden">
                 <SessionList
                   sessions={sessions.filter((s) => s.agentId === selectedAgent.id)}
                   activeSessionId={activeSession?.id}
@@ -304,8 +303,8 @@ export default function Dashboard() {
               </TabsContent>
 
               {activeSession && (
-                <TabsContent value="stats" className="flex-1 m-0 p-4 overflow-auto">
-                  <div className="space-y-4">
+                <TabsContent value="stats" className="flex-1 m-0 overflow-y-auto data-[state=active]:block data-[state=inactive]:hidden">
+                  <div className="p-4 space-y-4">
                     <div>
                       <h3 className="text-lg font-semibold mb-4">Session Statistics</h3>
                       <SessionStats session={activeSession} />
@@ -313,7 +312,7 @@ export default function Dashboard() {
                     <Separator />
                     <div>
                       <h4 className="text-sm font-medium mb-2">Session ID</h4>
-                      <p className="text-sm font-mono text-muted-foreground bg-muted px-3 py-2 rounded">
+                      <p className="text-sm font-mono text-muted-foreground bg-muted px-3 py-2 rounded break-all">
                         {activeSession.id}
                       </p>
                     </div>

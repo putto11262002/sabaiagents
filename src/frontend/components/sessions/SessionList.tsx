@@ -1,5 +1,4 @@
 import React from 'react';
-import { ScrollArea } from '@/components/ui/scroll-area.js';
 import { SessionCard } from './SessionCard.js';
 import type { Session } from '@/types/agent.js';
 
@@ -23,7 +22,7 @@ export function SessionList({
   }
 
   return (
-    <ScrollArea className="h-full">
+    <div className="h-full overflow-y-auto">
       <div className="space-y-3 p-4">
         {sessions.map((session) => (
           <SessionCard
@@ -34,6 +33,6 @@ export function SessionList({
           />
         ))}
       </div>
-    </ScrollArea>
+    </div>
   );
 }
