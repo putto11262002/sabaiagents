@@ -1,3 +1,9 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+/* Custom theme configuration can be added here using @theme */
+/* Example:
+@theme {
+  --color-primary: #3b82f6;
+  --font-family-display: "Inter", sans-serif;
+}
+*/

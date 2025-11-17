@@ -109,34 +109,62 @@ export default function Navbar() {
 }
 ```
 
-## Tailwind CSS Usage
+## Tailwind CSS v4 Usage
 
 ### Setup
 
-1. **Config**: `tailwind.config.ts` at project root
-2. **Import**: Add Tailwind directives in `src/frontend/styles/app.css`
-3. **Content Paths**: Configure to scan all frontend files
+This project uses **Tailwind CSS v4**, which simplifies configuration significantly:
 
-```ts
-// tailwind.config.ts
-export default {
-  content: [
-    './src/public/**/*.html',
-    './src/frontend/**/*.{js,ts,jsx,tsx}',
-  ],
-  // ...
-};
+1. **No Config File Needed**: Tailwind v4 uses automatic content detection (no `tailwind.config.js` required)
+2. **CSS-Based Import**: Simply import in `src/frontend/styles/app.css`:
+   ```css
+   @import "tailwindcss";
+   ```
+3. **PostCSS Config**: `postcss.config.js` at project root with `@tailwindcss/postcss` plugin
+4. **Auto Content Detection**: Automatically scans your files; respects `.gitignore`
+
+### Theme Customization
+
+Customize your theme directly in CSS using the `@theme` block:
+
+```css
+/* src/frontend/styles/app.css */
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #3b82f6;
+  --color-secondary: #8b5cf6;
+  --font-family-display: "Inter", sans-serif;
+  --spacing-custom: 3.5rem;
+}
 ```
+
+Design tokens become native CSS variables automatically and can be used throughout your app.
 
 ### In Components
 
-Use Tailwind utility classes directly:
+Use Tailwind utility classes directly (same as v3):
 
 ```tsx
 <div className="bg-blue-600 text-white p-4 rounded-lg">
   <h1 className="text-2xl font-bold">Hello</h1>
 </div>
 ```
+
+### Dynamic Utilities
+
+Tailwind v4 supports dynamic utility values without configuration:
+
+```tsx
+<div className="grid grid-cols-15">  {/* Any number works */}
+<div className="text-[#c0ffee]">     {/* Arbitrary values */}
+```
+
+### Performance
+
+Tailwind v4 offers significantly faster build times:
+- Full rebuilds: 3.5x faster
+- Incremental builds: 8x faster (often in microseconds)
 
 ## Bun Server Integration
 
@@ -274,10 +302,11 @@ bun test
    - Routes = Pages that map to URLs
    - Components = Reusable UI pieces
 
-3. **Styling**:
-   - Prefer Tailwind utilities
-   - Add custom CSS to `app.css` if needed
-   - Use Tailwind's `@apply` for common patterns
+3. **Styling with Tailwind v4**:
+   - Prefer Tailwind utility classes
+   - Customize theme using `@theme` block in `app.css`
+   - Design tokens become CSS variables automatically
+   - No configuration needed for dynamic utilities
 
 4. **Routing**:
    - Keep routes organized in `app.tsx`
@@ -318,7 +347,8 @@ This setup provides:
 - ✅ Modern Bun-based fullstack development
 - ✅ React 19 with TypeScript
 - ✅ React Router in declarative mode
-- ✅ Tailwind CSS with Bun's bundler
-- ✅ Hot Module Reload (HMR)
+- ✅ Tailwind CSS v4 with zero-config auto-detection
+- ✅ Hot Module Reload (HMR) for instant feedback
 - ✅ Clean folder structure and conventions
 - ✅ Type safety throughout
+- ✅ Lightning-fast builds (3.5x faster rebuilds, 8x faster incremental)
