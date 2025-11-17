@@ -10,6 +10,14 @@ import { Session } from '../session/index.js';
 import { executeCommand, executeStreaming, buildArgs } from '../../claude/process.js';
 import { parseStream } from '../../claude/stream-parser.js';
 
+// Export enhanced config and tool agent
+export type { EnhancedConfig, ToolConfig } from './enhanced-config.js';
+export { isEnhancedConfig, toClaudeConfig } from './enhanced-config.js';
+export type { ToolAgentInstance, ToolAgentRunOptions } from './tool-agent.js';
+export { createToolAgent } from './tool-agent.js';
+export type { ToolResolver, ToolResolverOptions } from './tool-resolver.js';
+export { createToolResolver } from './tool-resolver.js';
+
 /**
  * Agent namespace containing all agent-related functionality
  */
