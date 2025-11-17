@@ -12,6 +12,7 @@ import "./styles/app.css";
 import Layout from "./routes/layout.js";
 import Home from "./routes/home.js";
 import About from "./routes/about.js";
+import { PromptEditorPage } from "./routes/prompt-editor.js";
 
 function App() {
   return (
@@ -20,6 +21,7 @@ function App() {
         <Route path="/" element={<Layout />}>
           <Route index element={<Home />} />
           <Route path="about" element={<About />} />
+          <Route path="prompt-editor" element={<PromptEditorPage />} />
         </Route>
       </Routes>
     </BrowserRouter>

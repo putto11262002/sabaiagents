@@ -24,6 +24,12 @@ export default function Navbar() {
             >
               About
             </Link>
+            <Link
+              to="/prompt-editor"
+              className="hover:text-blue-200 transition font-medium"
+            >
+              Prompt Editor
+            </Link>
           </div>
         </div>
       </div>
