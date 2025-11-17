@@ -1,68 +1,73 @@
-# Claude Code Headless Mode Examples
+# Tool Library Examples
 
-This directory contains comprehensive examples demonstrating the Claude Code headless mode client library.
+This directory contains examples demonstrating the unified tool library system.
 
-## Prerequisites
+## Examples
 
-- Claude Code CLI installed and authenticated
-- Bun runtime
-
-## Running Examples
+### 1. `tool-library-basic.ts`
+Basic usage of the tool registry:
+- Creating a tool registry
+- Registering different types of tools (built-in, MCP, command)
+- Querying and filtering tools
+- Using tool presets
 
 ```bash
-# Basic text query
-bun examples/basic-query.ts
-
-# JSON output format
-bun examples/json-output.ts
-
-# Streaming responses
-bun examples/streaming.ts
-
-# Multi-turn conversations
-bun examples/multi-turn.ts
-
-# Tool configuration
-bun examples/tool-usage.ts
-
-# Session resumption
-bun examples/session-resume.ts
-
-# MCP integration (requires MCP config)
-bun examples/mcp-integration.ts
-
-# Incident response automation
-bun examples/incident-response.ts
+tsx examples/tool-library-basic.ts
 ```
 
-## Example Descriptions
+### 2. `mcp-manager-basic.ts`
+MCP manager basics:
+- Creating an MCP manager
+- Adding MCP servers
+- Creating gateways to group tools
+- Generating MCP configurations
 
-### basic-query.ts
-Simple text-based queries showing the most basic usage pattern.
+```bash
+tsx examples/mcp-manager-basic.ts
+```
 
-### json-output.ts
-Demonstrates JSON output format to get structured responses with metadata like cost, duration, and session ID.
+### 3. `tool-agent-basic.ts`
+Tool-enhanced agents:
+- Creating agents with the unified tool system
+- Using built-in tools, MCP tools, and command tools together
+- Dynamic tool configuration per run
 
-### streaming.ts
-Real-time streaming of Claude's response as it's generated, useful for providing immediate feedback to users.
+```bash
+tsx examples/tool-agent-basic.ts
+```
 
-### multi-turn.ts
-Session-based multi-turn conversations with context preservation across multiple queries.
+### 4. `mcp-gateway-advanced.ts`
+Advanced MCP gateway usage:
+- Creating multiple gateways for different purposes
+- Generating MCP config files
+- Using router for tool routing
 
-### tool-usage.ts
-Configuring allowed and disallowed tools to control Claude's capabilities.
+```bash
+tsx examples/mcp-gateway-advanced.ts
+```
 
-### session-resume.ts
-Resuming previous sessions and continuing conversations, with session export/import for persistence.
+## Tool Types
 
-### mcp-integration.ts
-Using Model Context Protocol (MCP) servers for enhanced integrations (Datadog, Slack, GitHub, etc.).
+### Built-in Tools
+Claude Code's native tools (Read, Write, Bash, etc.)
 
-### incident-response.ts
-Real-world automation scenario showing incident analysis and response recommendations.
+### MCP Tools
+Tools from Model Context Protocol servers
+
+### Command Tools
+System commands wrapped as tools
+
+## Environment Variables
+
+Some examples require environment variables:
+- `GITHUB_TOKEN` - for GitHub MCP server
+- `LINEAR_API_KEY` - for Linear MCP server
+- `SLACK_TOKEN` - for Slack MCP server
+- `DATADOG_API_KEY` - for Datadog MCP server
+- `DATADOG_APP_KEY` - for Datadog MCP server
 
 ## Notes
 
-- Some examples may incur API costs
-- MCP examples require additional configuration files
-- Tool usage examples may interact with your file system
+- Most examples have API calls commented out to avoid unintended execution
+- Uncomment the relevant sections to test with actual APIs
+- Make sure to set up required environment variables before running
