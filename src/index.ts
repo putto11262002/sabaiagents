@@ -1,39 +1,33 @@
 /**
- * Main entry point - exports Claude Code client library
- *
- * ## Architecture
- *
- * This library uses TypeScript namespaces organized in core/:
- * - **ClaudeCode** namespace (core/claude-code) - Core functionality
- * - **Agent** namespace (core/agent) - Pre-configured templates
- * - **Session** namespace (core/session) - SQLite session storage
- *
- * @see https://code.claude.com/docs/en/headless
+ * Main entry point for the application
+ * Bun server with HTML imports, React, and Tailwind support
  */
 
-// Export core namespaces
-export { ClaudeCode } from './core/claude-code/index.ts';
-export { Agent } from './core/agent/index.ts';
-export { Session } from './core/session/index.ts';
+import indexHtml from "./public/index.html";
 
-// Export types
-export type { Claude } from './claude/types.ts';
+const server = Bun.serve({
+  port: 3000,
+  routes: {
+    // Serve the main HTML file
+    "/": indexHtml,
 
-// Export errors
-export {
-  ClaudeError,
-  ClaudeProcessError,
-  ClaudeTimeoutError,
-  ClaudeParseError,
-  ClaudeAPIError,
-  ClaudeSessionError,
-  ClaudeConfigError,
-} from './claude/error.ts';
+    // API routes can be added here
+    "/api/health": {
+      GET: () => {
+        return new Response(JSON.stringify({ status: "ok", timestamp: Date.now() }), {
+          headers: { "Content-Type": "application/json" },
+        });
+      },
+    },
+  },
 
-// Export utilities
-export {
-  extractText,
-  extractThinking,
-  extractToolUses,
-  extractToolResults,
-} from './claude/stream-parser.ts';
+  development: {
+    // Enable Hot Module Reload in development
+    hmr: true,
+    // Show console logs in the browser
+    console: true,
+  },
+});
+
+console.log(`🚀 Server running at http://localhost:${server.port}`);
+console.log(`📦 Bun version: ${Bun.version}`);
