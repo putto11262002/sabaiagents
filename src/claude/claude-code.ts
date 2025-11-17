@@ -8,11 +8,11 @@
  * @see https://code.claude.com/docs/en/cli-reference - CLI reference
  */
 
-import type { Claude } from './types.ts';
-import { ClaudeAPIError, ClaudeProcessError } from './error.ts';
-import { executeCommand, executeStreaming, buildArgs, checkClaudeAvailable, getClaudeVersion } from './process.ts';
-import { parseStream } from './stream-parser.ts';
-import type { SessionStore } from './session-store.ts';
+import type { Claude } from './types.js';
+import { ClaudeAPIError, ClaudeProcessError } from './error.js';
+import { executeCommand, executeStreaming, buildArgs, checkClaudeAvailable, getClaudeVersion } from './process.js';
+import { parseStream } from './stream-parser.js';
+import type { SessionStore } from './session-store.js';
 
 /**
  * ClaudeCode namespace containing all core functionality

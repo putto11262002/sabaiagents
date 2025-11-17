@@ -2,7 +2,7 @@
  * Tests for stream parser
  */
 
-import { describe, test, expect } from 'bun:test';
+import { describe, test, expect } from 'vitest';
 import {
   parseLine,
   filterMessages,
@@ -15,9 +15,9 @@ import {
   createUserInput,
   createStreamInput,
   validateMessage,
-} from '../../src/claude/stream-parser.ts';
-import type { Claude } from '../../src/claude/types.ts';
-import { ClaudeParseError } from '../../src/claude/error.ts';
+} from '../../src/claude/stream-parser.js';
+import type { Claude } from '../../src/claude/types.js';
+import { ClaudeParseError } from '../../src/claude/error.js';
 
 describe('Stream Parser', () => {
   describe('parseLine', () => {

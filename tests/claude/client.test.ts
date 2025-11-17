@@ -2,8 +2,8 @@
  * Tests for ClaudeClient
  */
 
-import { describe, test, expect } from 'bun:test';
-import { ClaudeClient, createClient } from '../../src/claude/client.ts';
+import { describe, test, expect } from 'vitest';
+import { ClaudeClient, createClient } from '../../src/claude/client.js';
 
 describe('ClaudeClient', () => {
   describe('Constructor', () => {

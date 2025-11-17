@@ -10,7 +10,7 @@ import {
   createSessionStore,
   BuiltInTools,
   type Claude,
-} from '../src/claude/index.ts';
+} from '../src/claude/index.js';
 
 async function main() {
   console.log('=== Claude Code New Architecture Demo ===\n');

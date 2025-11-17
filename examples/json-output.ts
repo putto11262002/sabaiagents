@@ -4,7 +4,7 @@
  * Demonstrates using JSON output format to get structured responses with metadata
  */
 
-import { ClaudeClient } from '../src/claude/index.ts';
+import { ClaudeClient } from '../src/claude/index.js';
 
 async function main() {
   const client = new ClaudeClient();

@@ -2,9 +2,9 @@
  * Tests for Session and SessionManager
  */
 
-import { describe, test, expect, beforeEach } from 'bun:test';
-import { Session, SessionManager } from '../../src/claude/session-manager.ts';
-import type { Claude } from '../../src/claude/types.ts';
+import { describe, test, expect, beforeEach } from 'vitest';
+import { Session, SessionManager } from '../../src/claude/session-manager.js';
+import type { Claude } from '../../src/claude/types.js';
 
 describe('Session', () => {
   describe('Constructor', () => {

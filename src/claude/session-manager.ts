@@ -2,10 +2,10 @@
  * Session management for multi-turn conversations
  */
 
-import type { Claude } from './types.ts';
-import { ClaudeSessionError } from './error.ts';
-import { executeCommand, executeStreaming, buildArgs } from './process.ts';
-import { parseStream, collectStream, createUserInput, createStreamInput } from './stream-parser.ts';
+import type { Claude } from './types.js';
+import { ClaudeSessionError } from './error.js';
+import { executeCommand, executeStreaming, buildArgs } from './process.js';
+import { parseStream, collectStream, createUserInput, createStreamInput } from './stream-parser.js';
 
 /**
  * Session class for managing multi-turn conversations
@@ -142,9 +142,9 @@ export class Session {
    */
   async *stream(
     prompt: string,
-    options: Omit<Claude.StreamOptions, 'sessionId' | 'continue'> = {}
+    options: Omit<Claude.StreamOptions, 'sessionId' | 'continue' | 'outputFormat'> = {}
   ): AsyncIterableIterator<Claude.StreamMessage> {
-    const mergedOptions: Claude.SessionOptions = {
+    const mergedOptions: Claude.StreamOptions = {
       ...this.baseOptions,
       ...options,
       outputFormat: 'stream-json',
@@ -201,11 +201,11 @@ export class Session {
   /**
    * Send multiple messages using stream-JSON input
    */
-  async sendMultiple(
+  async *sendMultiple(
     messages: Array<{ role: 'user' | 'assistant'; content: string | Claude.ContentBlock[] }>,
-    options: Omit<Claude.StreamOptions, 'sessionId' | 'continue'> = {}
+    options: Omit<Claude.StreamOptions, 'sessionId' | 'continue' | 'outputFormat' | 'inputFormat'> = {}
   ): AsyncIterableIterator<Claude.StreamMessage> {
-    const mergedOptions: Claude.SessionOptions = {
+    const mergedOptions: Claude.StreamOptions = {
       ...this.baseOptions,
       ...options,
       outputFormat: 'stream-json',

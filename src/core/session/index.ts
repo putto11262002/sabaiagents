@@ -1,13 +1,17 @@
 /**
- * Session namespace - SQLite-based session storage for Claude Code
+ * Session namespace - SQLite-based session storage for Claude Code using Drizzle ORM
  *
- * @see https://bun.sh/docs/api/sqlite
+ * @see https://orm.drizzle.team/docs/get-started-sqlite
  * @see https://code.claude.com/docs/en/headless#sessions
  */
 
-import { Database } from 'bun:sqlite';
-import type { Claude } from '../../claude/types.ts';
-import { ClaudeSessionError } from '../../claude/error.ts';
+import Database from 'better-sqlite3';
+import { eq, desc, sql } from 'drizzle-orm';
+import { statSync } from 'node:fs';
+import { createDbFromClient } from '../../db/index.js';
+import { sessions, conversationHistory, streamMessages } from '../../db/schema.js';
+import type { Claude } from '../../claude/types.js';
+import { ClaudeSessionError } from '../../claude/error.js';
 
 /**
  * Session namespace containing all session-related functionality
@@ -74,19 +78,21 @@ export namespace Session {
   }
 
   /**
-   * SQLite-based session store implementation
+   * SQLite-based session store implementation using Drizzle ORM
    */
   class SQLiteStore implements Store {
-    private db: Database;
+    private sqlite: Database.Database;
+    private db: ReturnType<typeof createDbFromClient>;
 
     constructor(dbPath: string = ':memory:') {
-      this.db = new Database(dbPath);
+      this.sqlite = new Database(dbPath);
+      this.db = createDbFromClient(this.sqlite);
       this.initTables();
     }
 
     private initTables(): void {
-      // Sessions table
-      this.db.exec(`
+      // Create tables using raw SQL (can be replaced with migrations)
+      this.sqlite.exec(`
         CREATE TABLE IF NOT EXISTS sessions (
           id TEXT PRIMARY KEY,
           created_at INTEGER NOT NULL,
@@ -97,8 +103,7 @@ export namespace Session {
         )
       `);
 
-      // Conversation history table
-      this.db.exec(`
+      this.sqlite.exec(`
         CREATE TABLE IF NOT EXISTS conversation_history (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           session_id TEXT NOT NULL,
@@ -109,8 +114,7 @@ export namespace Session {
         )
       `);
 
-      // Stream messages table
-      this.db.exec(`
+      this.sqlite.exec(`
         CREATE TABLE IF NOT EXISTS stream_messages (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           session_id TEXT NOT NULL,
@@ -122,140 +126,154 @@ export namespace Session {
       `);
 
       // Create indexes
-      this.db.exec(`
+      this.sqlite.exec(`
         CREATE INDEX IF NOT EXISTS idx_conversation_session
-        ON conversation_history(session_id);
+        ON conversation_history(session_id)
       `);
 
-      this.db.exec(`
+      this.sqlite.exec(`
         CREATE INDEX IF NOT EXISTS idx_stream_session
-        ON stream_messages(session_id);
+        ON stream_messages(session_id)
       `);
 
-      this.db.exec(`
+      this.sqlite.exec(`
         CREATE INDEX IF NOT EXISTS idx_sessions_last_active
-        ON sessions(last_active DESC);
+        ON sessions(last_active DESC)
       `);
     }
 
     upsertSession(metadata: Metadata): void {
-      const stmt = this.db.prepare(`
-        INSERT INTO sessions (id, created_at, last_active, turns, total_cost_usd, metadata)
-        VALUES (?, ?, ?, ?, ?, ?)
-        ON CONFLICT(id) DO UPDATE SET
-          last_active = excluded.last_active,
-          turns = excluded.turns,
-          total_cost_usd = excluded.total_cost_usd,
-          metadata = excluded.metadata
-      `);
-
-      stmt.run(
-        metadata.id,
-        metadata.created_at,
-        metadata.last_active,
-        metadata.turns,
-        metadata.total_cost_usd,
-        JSON.stringify(metadata)
-      );
+      this.db
+        .insert(sessions)
+        .values({
+          id: metadata.id,
+          createdAt: new Date(metadata.created_at),
+          lastActive: new Date(metadata.last_active),
+          turns: metadata.turns,
+          totalCostUsd: metadata.total_cost_usd,
+          metadata: JSON.stringify(metadata),
+        })
+        .onConflictDoUpdate({
+          target: sessions.id,
+          set: {
+            lastActive: new Date(metadata.last_active),
+            turns: metadata.turns,
+            totalCostUsd: metadata.total_cost_usd,
+            metadata: JSON.stringify(metadata),
+          },
+        })
+        .run();
     }
 
     getSession(sessionId: string): Metadata | null {
-      const stmt = this.db.prepare(`SELECT * FROM sessions WHERE id = ?`);
-      const row = stmt.get(sessionId) as any;
-      if (!row) return null;
+      const result = this.db
+        .select()
+        .from(sessions)
+        .where(eq(sessions.id, sessionId))
+        .get();
+
+      if (!result) return null;
 
       return {
-        id: row.id,
-        created_at: row.created_at,
-        last_active: row.last_active,
-        turns: row.turns,
-        total_cost_usd: row.total_cost_usd,
+        id: result.id,
+        created_at: result.createdAt.getTime(),
+        last_active: result.lastActive.getTime(),
+        turns: result.turns,
+        total_cost_usd: result.totalCostUsd,
       };
     }
 
     addConversationTurn(sessionId: string, turn: Turn): void {
-      const stmt = this.db.prepare(`
-        INSERT INTO conversation_history (session_id, role, content, timestamp)
-        VALUES (?, ?, ?, ?)
-      `);
-
-      stmt.run(
-        sessionId,
-        turn.role,
-        typeof turn.content === 'string' ? turn.content : JSON.stringify(turn.content),
-        turn.timestamp
-      );
+      this.db
+        .insert(conversationHistory)
+        .values({
+          sessionId,
+          role: turn.role,
+          content: typeof turn.content === 'string' ? turn.content : JSON.stringify(turn.content),
+          timestamp: new Date(turn.timestamp),
+        })
+        .run();
     }
 
     getConversationHistory(sessionId: string): Turn[] {
-      const stmt = this.db.prepare(`
-        SELECT role, content, timestamp
-        FROM conversation_history
-        WHERE session_id = ?
-        ORDER BY timestamp ASC
-      `);
+      const results = this.db
+        .select({
+          role: conversationHistory.role,
+          content: conversationHistory.content,
+          timestamp: conversationHistory.timestamp,
+        })
+        .from(conversationHistory)
+        .where(eq(conversationHistory.sessionId, sessionId))
+        .orderBy(conversationHistory.timestamp)
+        .all();
 
-      const rows = stmt.all(sessionId) as any[];
-      return rows.map(row => ({
-        role: row.role,
+      return results.map((row) => ({
+        role: row.role as 'user' | 'assistant',
         content: row.content,
-        timestamp: row.timestamp,
+        timestamp: row.timestamp.getTime(),
       }));
     }
 
     addStreamMessage(sessionId: string, message: Claude.StreamMessage): void {
-      const stmt = this.db.prepare(`
-        INSERT INTO stream_messages (session_id, message_type, message_data, timestamp)
-        VALUES (?, ?, ?, ?)
-      `);
-
-      stmt.run(
-        sessionId,
-        message.type,
-        JSON.stringify(message),
-        Date.now()
-      );
+      this.db
+        .insert(streamMessages)
+        .values({
+          sessionId,
+          messageType: message.type,
+          messageData: JSON.stringify(message),
+          timestamp: new Date(),
+        })
+        .run();
     }
 
     getStreamMessages(sessionId: string): Claude.StreamMessage[] {
-      const stmt = this.db.prepare(`
-        SELECT message_data
-        FROM stream_messages
-        WHERE session_id = ?
-        ORDER BY timestamp ASC
-      `);
+      const results = this.db
+        .select({
+          messageData: streamMessages.messageData,
+        })
+        .from(streamMessages)
+        .where(eq(streamMessages.sessionId, sessionId))
+        .orderBy(streamMessages.timestamp)
+        .all();
 
-      const rows = stmt.all(sessionId) as any[];
-      return rows.map(row => JSON.parse(row.message_data));
+      return results.map((row) => JSON.parse(row.messageData));
     }
 
     deleteSession(sessionId: string): boolean {
-      const stmt = this.db.prepare(`DELETE FROM sessions WHERE id = ?`);
-      const result = stmt.run(sessionId);
+      const result = this.db
+        .delete(sessions)
+        .where(eq(sessions.id, sessionId))
+        .run();
+
       return result.changes > 0;
     }
 
     listSessions(): string[] {
-      const stmt = this.db.prepare(`
-        SELECT id FROM sessions ORDER BY last_active DESC
-      `);
-      const rows = stmt.all() as any[];
-      return rows.map(row => row.id);
+      const results = this.db
+        .select({ id: sessions.id })
+        .from(sessions)
+        .orderBy(desc(sessions.lastActive))
+        .all();
+
+      return results.map((row) => row.id);
     }
 
     getLastSession(): Metadata | null {
-      const stmt = this.db.prepare(`
-        SELECT * FROM sessions ORDER BY last_active DESC LIMIT 1
-      `);
-      const row = stmt.get() as any;
-      if (!row) return null;
+      const result = this.db
+        .select()
+        .from(sessions)
+        .orderBy(desc(sessions.lastActive))
+        .limit(1)
+        .get();
+
+      if (!result) return null;
 
       return {
-        id: row.id,
-        created_at: row.created_at,
-        last_active: row.last_active,
-        turns: row.turns,
-        total_cost_usd: row.total_cost_usd,
+        id: result.id,
+        created_at: result.createdAt.getTime(),
+        last_active: result.lastActive.getTime(),
+        turns: result.turns,
+        total_cost_usd: result.totalCostUsd,
       };
     }
 
@@ -268,31 +286,44 @@ export namespace Session {
     }
 
     importSessionData(data: Data): void {
-      const transaction = this.db.transaction(() => {
+      this.db.transaction((tx) => {
         this.upsertSession(data.metadata);
         for (const turn of data.history) {
           this.addConversationTurn(data.metadata.id, turn);
         }
       });
-      transaction();
     }
 
     clearAll(): void {
-      this.db.exec('DELETE FROM sessions');
-      this.db.exec('DELETE FROM conversation_history');
-      this.db.exec('DELETE FROM stream_messages');
+      this.db.delete(sessions).run();
+      this.db.delete(conversationHistory).run();
+      this.db.delete(streamMessages).run();
     }
 
     getStats(): StoreStats {
-      const totalSessions = (this.db.prepare('SELECT COUNT(*) as count FROM sessions').get() as any).count;
-      const totalMessages = (this.db.prepare('SELECT COUNT(*) as count FROM conversation_history').get() as any).count;
-      const totalStreamMessages = (this.db.prepare('SELECT COUNT(*) as count FROM stream_messages').get() as any).count;
+      const totalSessions =
+        this.db
+          .select({ count: sql<number>`count(*)` })
+          .from(sessions)
+          .get()?.count ?? 0;
+
+      const totalMessages =
+        this.db
+          .select({ count: sql<number>`count(*)` })
+          .from(conversationHistory)
+          .get()?.count ?? 0;
+
+      const totalStreamMessages =
+        this.db
+          .select({ count: sql<number>`count(*)` })
+          .from(streamMessages)
+          .get()?.count ?? 0;
 
       let databaseSize = 0;
       try {
-        if (this.db.filename !== ':memory:') {
-          const file = Bun.file(this.db.filename);
-          databaseSize = file.size;
+        if (this.sqlite.name !== ':memory:') {
+          const stats = statSync(this.sqlite.name);
+          databaseSize = stats.size;
         }
       } catch {
         // Ignore errors for in-memory databases
@@ -307,16 +338,16 @@ export namespace Session {
     }
 
     close(): void {
-      this.db.close();
+      this.sqlite.close();
     }
 
     checkpoint(): void {
-      this.db.exec('PRAGMA wal_checkpoint(TRUNCATE)');
+      this.sqlite.exec('PRAGMA wal_checkpoint(TRUNCATE)');
     }
 
     optimize(): void {
-      this.db.exec('VACUUM');
-      this.db.exec('ANALYZE');
+      this.sqlite.exec('VACUUM');
+      this.sqlite.exec('ANALYZE');
     }
   }
 

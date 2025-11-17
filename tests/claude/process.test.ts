@@ -2,9 +2,9 @@
  * Tests for process management
  */
 
-import { describe, test, expect } from 'bun:test';
-import { buildArgs, checkClaudeAvailable } from '../../src/claude/process.ts';
-import type { Claude } from '../../src/claude/types.ts';
+import { describe, test, expect } from 'vitest';
+import { buildArgs, checkClaudeAvailable } from '../../src/claude/process.js';
+import type { Claude } from '../../src/claude/types.js';
 
 describe('Process Management', () => {
   describe('buildArgs', () => {

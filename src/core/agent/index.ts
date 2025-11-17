@@ -4,11 +4,11 @@
  * @see https://code.claude.com/docs/en/headless
  */
 
-import type { Claude } from '../../claude/types.ts';
-import { ClaudeCode } from '../claude-code/index.ts';
-import { Session } from '../session/index.ts';
-import { executeCommand, executeStreaming, buildArgs } from '../../claude/process.ts';
-import { parseStream } from '../../claude/stream-parser.ts';
+import type { Claude } from '../../claude/types.js';
+import { ClaudeCode } from '../claude-code/index.js';
+import { Session } from '../session/index.js';
+import { executeCommand, executeStreaming, buildArgs } from '../../claude/process.js';
+import { parseStream } from '../../claude/stream-parser.js';
 
 /**
  * Agent namespace containing all agent-related functionality
