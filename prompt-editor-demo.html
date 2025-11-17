@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CodeMirror Prompt Editor Demo</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 40px 20px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .header {
+      text-align: center;
+      color: white;
+      margin-bottom: 40px;
+    }
+
+    .header h1 {
+      font-size: 2.5em;
+      margin-bottom: 10px;
+      font-weight: 700;
+    }
+
+    .header p {
+      font-size: 1.2em;
+      opacity: 0.95;
+    }
+
+    .content {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 30px;
+      margin-bottom: 30px;
+    }
+
+    @media (max-width: 968px) {
+      .content {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .card {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      overflow: hidden;
+    }
+
+    .card-header {
+      background: #f6f8fa;
+      padding: 20px;
+      border-bottom: 2px solid #e1e4e8;
+    }
+
+    .card-header h2 {
+      font-size: 1.5em;
+      color: #24292e;
+      margin-bottom: 8px;
+    }
+
+    .card-header p {
+      color: #586069;
+      font-size: 0.95em;
+    }
+
+    .card-body {
+      padding: 20px;
+    }
+
+    #editor-container {
+      min-height: 400px;
+    }
+
+    .info-section {
+      margin-bottom: 25px;
+    }
+
+    .info-section h3 {
+      font-size: 1.2em;
+      color: #24292e;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .info-section h3::before {
+      content: "→";
+      color: #667eea;
+      font-weight: bold;
+      font-size: 1.3em;
+    }
+
+    .syntax-item {
+      background: #f6f8fa;
+      padding: 12px 16px;
+      border-radius: 6px;
+      margin-bottom: 10px;
+      border-left: 4px solid #667eea;
+    }
+
+    .syntax-item code {
+      background: #ffffff;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-family: Monaco, Menlo, monospace;
+      font-size: 0.9em;
+      color: #e36209;
+      border: 1px solid #e1e4e8;
+    }
+
+    .syntax-item .variable-example {
+      color: #22863a;
+      font-weight: 600;
+    }
+
+    .syntax-item .command-example {
+      color: #6f42c1;
+      font-weight: 600;
+    }
+
+    .syntax-item .tool-example {
+      color: #0366d6;
+      font-weight: 600;
+    }
+
+    .syntax-item p {
+      margin-top: 8px;
+      color: #586069;
+      font-size: 0.9em;
+    }
+
+    .example-box {
+      background: #f6f8fa;
+      border: 1px solid #e1e4e8;
+      border-radius: 6px;
+      padding: 16px;
+      margin-top: 10px;
+      font-family: Monaco, Menlo, monospace;
+      font-size: 0.9em;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      color: #24292e;
+    }
+
+    .shortcuts {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 12px;
+      margin-top: 10px;
+    }
+
+    .shortcut-key {
+      background: #24292e;
+      color: white;
+      padding: 6px 12px;
+      border-radius: 4px;
+      font-family: Monaco, Menlo, monospace;
+      font-size: 0.85em;
+      text-align: center;
+      font-weight: 600;
+    }
+
+    .shortcut-desc {
+      display: flex;
+      align-items: center;
+      color: #586069;
+      font-size: 0.95em;
+    }
+
+    .button-group {
+      display: flex;
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    .btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.95em;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-primary {
+      background: #667eea;
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: #5568d3;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-secondary {
+      background: #f6f8fa;
+      color: #24292e;
+      border: 1px solid #e1e4e8;
+    }
+
+    .btn-secondary:hover {
+      background: #e1e4e8;
+      transform: translateY(-2px);
+    }
+
+    .output {
+      background: #24292e;
+      color: #50fa7b;
+      padding: 16px;
+      border-radius: 6px;
+      font-family: Monaco, Menlo, monospace;
+      font-size: 0.85em;
+      line-height: 1.6;
+      max-height: 200px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+
+    .output:empty::before {
+      content: "No content yet...";
+      color: #6a737d;
+    }
+
+    .footer {
+      text-align: center;
+      color: white;
+      padding: 20px;
+      opacity: 0.9;
+    }
+
+    .footer a {
+      color: white;
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <h1>🎯 CodeMirror Prompt Editor</h1>
+      <p>A powerful markdown editor with custom syntax and intelligent autocomplete</p>
+    </div>
+
+    <!-- Main Content -->
+    <div class="content">
+      <!-- Left Column: Editor -->
+      <div class="card">
+        <div class="card-header">
+          <h2>✏️ Editor</h2>
+          <p>Try typing <code>{</code>, <code>@</code>, or <code>tools:</code></p>
+        </div>
+        <div class="card-body">
+          <div id="editor-container"></div>
+
+          <div class="button-group">
+            <button class="btn btn-primary" id="btn-get-content">Get Content</button>
+            <button class="btn btn-secondary" id="btn-clear">Clear</button>
+            <button class="btn btn-secondary" id="btn-load-example">Load Example</button>
+          </div>
+
+          <div style="margin-top: 20px;">
+            <h3 style="margin-bottom: 10px; color: #24292e;">Output:</h3>
+            <div class="output" id="output"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column: Documentation -->
+      <div class="card">
+        <div class="card-header">
+          <h2>📚 Features & Usage</h2>
+          <p>Learn how to use the special syntax</p>
+        </div>
+        <div class="card-body">
+
+          <!-- Variables -->
+          <div class="info-section">
+            <h3>Variables</h3>
+            <div class="syntax-item">
+              <div>Type <code class="variable-example">{</code> to insert template variables</div>
+              <p>Available: <code>{now}</code>, <code>{date}</code>, <code>{time}</code>, <code>{user}</code>, <code>{session_id}</code>, <code>{model}</code></p>
+            </div>
+            <div class="example-box">Hello <span style="color: #22863a; font-weight: 600;">{user}</span>! The current time is <span style="color: #22863a; font-weight: 600;">{now}</span>.</div>
+          </div>
+
+          <!-- Commands -->
+          <div class="info-section">
+            <h3>Commands</h3>
+            <div class="syntax-item">
+              <div>Type <code class="command-example">@</code> to invoke slash commands</div>
+              <p>Available: <code>@search</code>, <code>@analyze</code>, <code>@summarize</code>, <code>@translate</code>, <code>@format</code>, <code>@execute</code></p>
+            </div>
+            <div class="example-box">Please <span style="color: #6f42c1; font-weight: 600;">@search</span> for relevant documents and then <span style="color: #6f42c1; font-weight: 600;">@summarize</span> the findings.</div>
+          </div>
+
+          <!-- Tools -->
+          <div class="info-section">
+            <h3>Tools</h3>
+            <div class="syntax-item">
+              <div>Type <code class="tool-example">tools:</code> to specify available tools</div>
+              <p>Available: <code>search</code>, <code>calculator</code>, <code>web_fetch</code>, <code>code_executor</code>, <code>file_reader</code>, <code>image_analyzer</code></p>
+            </div>
+            <div class="example-box"><span style="color: #005cc5; font-weight: 700;">tools:</span> <span style="color: #0366d6; font-weight: 600;">search, calculator, web_fetch</span>
+
+Analyze the data and provide insights.</div>
+          </div>
+
+          <!-- Keyboard Shortcuts -->
+          <div class="info-section">
+            <h3>Keyboard Shortcuts</h3>
+            <div class="shortcuts">
+              <div class="shortcut-key">Ctrl+Space</div>
+              <div class="shortcut-desc">Force show autocomplete</div>
+
+              <div class="shortcut-key">↑ ↓</div>
+              <div class="shortcut-desc">Navigate suggestions</div>
+
+              <div class="shortcut-key">Enter</div>
+              <div class="shortcut-desc">Accept suggestion</div>
+
+              <div class="shortcut-key">Escape</div>
+              <div class="shortcut-desc">Close autocomplete</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      <p>Built with <a href="https://codemirror.net/" target="_blank">CodeMirror 6</a> | See <code>CODEMIRROR_GUIDE.md</code> for implementation details</p>
+    </div>
+  </div>
+
+  <!-- Import the editor module -->
+  <script type="module">
+    import { createPromptEditor, getEditorContent, setEditorContent } from './prompt-editor.ts';
+
+    // Example content to demonstrate the features
+    const exampleContent = `# Prompt Template
+
+Hello {user}! Today is {date} at {time}.
+
+## Instructions
+
+Please @search for information about AI models and @analyze the results.
+
+## Available Tools
+
+tools: search, calculator, web_fetch
+
+Use these tools to help answer: What is {model}?
+
+## Markdown Features
+
+You can use **bold**, *italic*, and \`code\` syntax.
+
+- Bullet points work
+- Multiple items supported
+
+1. Numbered lists too
+2. With proper formatting
+
+> This is a quote block
+
+\`\`\`javascript
+// Code blocks are supported
+const example = "Hello World";
+\`\`\`
+`;
+
+    // Create the editor
+    const editor = createPromptEditor(
+      document.getElementById('editor-container'),
+      exampleContent,
+      (content) => {
+        // This callback fires on every change
+        console.log('Content changed:', content);
+      }
+    );
+
+    // Button: Get Content
+    document.getElementById('btn-get-content').addEventListener('click', () => {
+      const content = getEditorContent(editor);
+      document.getElementById('output').textContent = content;
+    });
+
+    // Button: Clear
+    document.getElementById('btn-clear').addEventListener('click', () => {
+      setEditorContent(editor, '');
+      document.getElementById('output').textContent = '';
+    });
+
+    // Button: Load Example
+    document.getElementById('btn-load-example').addEventListener('click', () => {
+      setEditorContent(editor, exampleContent);
+      document.getElementById('output').textContent = '';
+    });
+
+    // Focus the editor
+    editor.focus();
+  </script>
+</body>
+</html>
