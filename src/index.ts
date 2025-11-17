@@ -1,33 +1,47 @@
 /**
  * Main entry point for the application
- * Bun server with HTML imports, React, and Tailwind support
+ * Express server with static file serving
  */
 
-import indexHtml from "./public/index.html";
+import express from 'express';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
+import dotenv from 'dotenv';
 
-const server = Bun.serve({
-  port: 3000,
-  routes: {
-    // Serve the main HTML file
-    "/": indexHtml,
+// Load environment variables
+dotenv.config();
 
-    // API routes can be added here
-    "/api/health": {
-      GET: () => {
-        return new Response(JSON.stringify({ status: "ok", timestamp: Date.now() }), {
-          headers: { "Content-Type": "application/json" },
-        });
-      },
-    },
-  },
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
-  development: {
-    // Enable Hot Module Reload in development
-    hmr: true,
-    // Show console logs in the browser
-    console: true,
-  },
+const app = express();
+const port = process.env.PORT || 3000;
+
+// Middleware
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Serve static files from the public directory
+app.use(express.static(join(__dirname, 'public')));
+
+// Serve frontend files
+app.use('/frontend', express.static(join(__dirname, 'frontend')));
+
+// API routes
+app.get('/api/health', (req, res) => {
+  res.json({
+    status: 'ok',
+    timestamp: Date.now(),
+  });
 });
 
-console.log(`🚀 Server running at http://localhost:${server.port}`);
-console.log(`📦 Bun version: ${Bun.version}`);
+// Serve the main HTML file for the root route and client-side routing
+app.get('*', (req, res) => {
+  res.sendFile(join(__dirname, 'public', 'index.html'));
+});
+
+// Start server
+app.listen(port, () => {
+  console.log(`🚀 Server running at http://localhost:${port}`);
+  console.log(`📦 Node.js version: ${process.version}`);
+});

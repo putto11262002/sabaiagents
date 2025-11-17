@@ -6,9 +6,9 @@ import { BrowserRouter, Routes, Route } from "react-router";
 import "./styles/app.css";
 
 // Import routes
-import Layout from "./routes/layout";
-import Home from "./routes/home";
-import About from "./routes/about";
+import Layout from "./routes/layout.js";
+import Home from "./routes/home.js";
+import About from "./routes/about.js";
 
 function App() {
   return (

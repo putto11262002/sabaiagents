@@ -5,12 +5,12 @@
  * They will be skipped if the CLI is not available.
  */
 
-import { describe, test, expect, beforeAll } from 'bun:test';
-import { ClaudeClient } from '../../src/claude/client.ts';
+import { describe, test, expect, beforeAll } from 'vitest';
+import { ClaudeClient } from '../../src/claude/client.js';
 
 describe('Integration Tests', () => {
   let client: ClaudeClient;
-  let isAvailable: boolean;
+  let isAvailable: boolean = false;
 
   beforeAll(async () => {
     client = new ClaudeClient();

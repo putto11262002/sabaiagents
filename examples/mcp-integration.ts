@@ -4,8 +4,8 @@
  * Demonstrates using Model Context Protocol (MCP) servers
  */
 
-import { ClaudeClient } from '../src/claude/index.ts';
-import type { Claude } from '../src/claude/index.ts';
+import { ClaudeClient } from '../src/claude/index.js';
+import type { Claude } from '../src/claude/index.js';
 
 async function main() {
   const client = new ClaudeClient();

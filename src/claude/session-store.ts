@@ -1,18 +1,19 @@
 /**
- * Session storage using Bun's built-in SQLite database
+ * Session storage using better-sqlite3 database
  *
- * @see https://bun.sh/docs/api/sqlite
+ * @see https://github.com/WiseLibs/better-sqlite3
  */
 
-import { Database } from 'bun:sqlite';
-import type { Claude } from './types.ts';
-import { ClaudeSessionError } from './error.ts';
+import Database from 'better-sqlite3';
+import { statSync } from 'node:fs';
+import type { Claude } from './types.js';
+import { ClaudeSessionError } from './error.js';
 
 /**
  * Session store using SQLite for persistence
  */
 export class SessionStore {
-  private db: Database;
+  private db: Database.Database;
 
   constructor(dbPath: string = ':memory:') {
     // Initialize SQLite database
@@ -295,9 +296,9 @@ export class SessionStore {
     // Get database file size (if not in-memory)
     let databaseSize = 0;
     try {
-      if (this.db.filename !== ':memory:') {
-        const file = Bun.file(this.db.filename);
-        databaseSize = file.size;
+      if (this.db.name !== ':memory:') {
+        const stats = statSync(this.db.name);
+        databaseSize = stats.size;
       }
     } catch {
       // Ignore errors for in-memory databases

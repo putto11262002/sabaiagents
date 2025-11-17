@@ -54,6 +54,10 @@ export namespace Claude {
     outputFormat: 'stream-json';
     /** Input format for multi-turn streaming */
     inputFormat?: 'stream-json';
+    /** Session ID to resume (mutually exclusive with continue) */
+    sessionId?: string;
+    /** Continue the most recent session */
+    continue?: boolean;
     /** Custom timeout in milliseconds */
     timeout?: number;
     /** Working directory for the claude process */

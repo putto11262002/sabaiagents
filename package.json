@@ -1,26 +1,37 @@
 {
   "name": "sabaiagents",
-  "module": "src/index.ts",
+  "version": "1.0.0",
   "type": "module",
   "private": true,
   "scripts": {
-    "dev": "bun --hot src/index.ts",
-    "start": "bun src/index.ts",
-    "build": "bun build src/index.ts --outdir ./dist --target bun",
-    "test": "bun test",
+    "dev": "tsx watch src/index.ts",
+    "start": "node --loader tsx src/index.ts",
+    "build": "tsc",
+    "test": "vitest",
+    "test:run": "vitest run",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.0.0",
-    "@types/bun": "latest",
-    "tailwindcss": "^4.0.0"
-  },
-  "peerDependencies": {
-    "typescript": "^5"
+    "@types/better-sqlite3": "^7.6.11",
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.2.5",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^4.3.4",
+    "tailwindcss": "^4.0.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "vite": "^6.0.5",
+    "vitest": "^2.1.8"
   },
   "dependencies": {
+    "better-sqlite3": "^11.8.1",
+    "dotenv": "^16.4.7",
+    "express": "^5.0.1",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
-    "react-router": "^7.9.6"
+    "react-router": "^7.9.6",
+    "vite-plugin-html": "^3.2.2"
   }
 }

@@ -2,8 +2,9 @@
  * Process management for Claude CLI
  */
 
-import type { Claude } from './types.ts';
-import { ClaudeProcessError, ClaudeTimeoutError } from './error.ts';
+import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process';
+import type { Claude } from './types.js';
+import { ClaudeProcessError, ClaudeTimeoutError } from './error.js';
 
 /**
  * Build command-line arguments from options
@@ -95,7 +96,7 @@ export async function executeCommand(
 
     // Execute with timeout
     const result = await Promise.race([
-      executeWithBun(cmd, stdin, cwd),
+      executeWithNode(cmd, stdin, cwd),
       createTimeout(timeout),
     ]);
 
@@ -115,60 +116,60 @@ export async function executeCommand(
 }
 
 /**
- * Execute command using Bun shell
+ * Execute command using Node.js child_process
  */
-async function executeWithBun(
+async function executeWithNode(
   cmd: string[],
   stdin?: string,
   cwd?: string
 ): Promise<Claude.ProcessResult> {
-  try {
-    // Build the shell command
-    const shellCmd = cmd.map(arg => {
-      // Escape arguments that contain spaces or special characters
-      if (arg.includes(' ') || arg.includes('"') || arg.includes("'") || arg.includes('$')) {
-        return `'${arg.replace(/'/g, "'\\''")}'`;
-      }
-      return arg;
-    }).join(' ');
+  return new Promise((resolve, reject) => {
+    const [command = '', ...args] = cmd;
+    if (!command) {
+      reject(new ClaudeProcessError('No command specified', { code: 'NO_COMMAND' }));
+      return;
+    }
+    const proc: ChildProcessWithoutNullStreams = spawn(command, args, {
+      cwd: cwd || process.cwd(),
+      stdio: ['pipe', 'pipe', 'pipe'],
+    });
 
-    // Execute using Bun.$
-    const proc = Bun.spawn(cmd, {
-      stdin: stdin ? 'pipe' : 'inherit',
-      stdout: 'pipe',
-      stderr: 'pipe',
-      cwd: cwd,
+    let stdout = '';
+    let stderr = '';
+
+    proc.stdout.on('data', (data: Buffer) => {
+      stdout += data.toString();
+    });
+
+    proc.stderr.on('data', (data: Buffer) => {
+      stderr += data.toString();
+    });
+
+    proc.on('error', (error: Error) => {
+      reject(new ClaudeProcessError(
+        `Process execution failed: ${error.message}`,
+        {
+          code: 'SPAWN_FAILED',
+        }
+      ));
+    });
+
+    proc.on('close', (exitCode: number | null) => {
+      resolve({
+        stdout,
+        stderr,
+        exitCode: exitCode ?? 1,
+      });
     });
 
     // Write stdin if provided
-    if (stdin && proc.stdin) {
-      const writer = proc.stdin.getWriter();
-      await writer.write(new TextEncoder().encode(stdin));
-      await writer.close();
+    if (stdin) {
+      proc.stdin.write(stdin);
+      proc.stdin.end();
+    } else {
+      proc.stdin.end();
     }
-
-    // Read stdout and stderr
-    const [stdout, stderr] = await Promise.all([
-      new Response(proc.stdout).text(),
-      new Response(proc.stderr).text(),
-    ]);
-
-    // Wait for process to exit
-    const exitCode = await proc.exited;
-
-    return {
-      stdout,
-      stderr,
-      exitCode,
-    };
-  } catch (error) {
-    throw new ClaudeProcessError(
-      `Process execution failed: ${error instanceof Error ? error.message : String(error)}`,
-      {
-        code: 'SPAWN_FAILED',
-      }
-    );
-  }
+  });
 }
 
 /**
@@ -195,124 +196,141 @@ export async function* executeStreaming(
 ): AsyncIterableIterator<string> {
   const { stdin, timeout = 120000, cwd } = options;
 
+  const cmd = ['claude', ...args];
+  const [command = '', ...cmdArgs] = cmd;
+
+  const proc: ChildProcessWithoutNullStreams = spawn(command, cmdArgs, {
+    cwd: cwd || process.cwd(),
+    stdio: ['pipe', 'pipe', 'pipe'],
+  });
+
+  let stderr = '';
+
+  // Write stdin if provided
+  if (stdin) {
+    proc.stdin.write(stdin);
+    proc.stdin.end();
+  } else {
+    proc.stdin.end();
+  }
+
+  // Capture stderr
+  proc.stderr.on('data', (data: Buffer) => {
+    stderr += data.toString();
+  });
+
+  let buffer = '';
+  let timeoutId: NodeJS.Timeout | null = null;
+
   try {
-    const cmd = ['claude', ...args];
+    yield* (async function* () {
+      for await (const chunk of proc.stdout) {
+        // Reset timeout on each chunk
+        if (timeoutId) clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => {
+          proc.kill();
+        }, timeout);
 
-    // Execute process
-    const proc = Bun.spawn(cmd, {
-      stdin: stdin ? 'pipe' : 'inherit',
-      stdout: 'pipe',
-      stderr: 'pipe',
-      cwd: cwd,
-    });
+        buffer += chunk.toString();
 
-    // Write stdin if provided
-    if (stdin && proc.stdin) {
-      const writer = proc.stdin.getWriter();
-      await writer.write(new TextEncoder().encode(stdin));
-      await writer.close();
-    }
+        // Split by newlines and yield complete lines
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || ''; // Keep the last incomplete line in buffer
 
-    // Read stdout line by line
-    const reader = proc.stdout.getReader();
-    const decoder = new TextDecoder();
-    let buffer = '';
-
-    try {
-      while (true) {
-        const { done, value } = await Promise.race([
-          reader.read(),
-          createTimeout(timeout).then(() => ({ done: true, value: undefined })),
-        ]);
-
-        if (done) {
-          // Yield any remaining buffer
-          if (buffer.length > 0) {
-            yield buffer;
-          }
-          break;
-        }
-
-        if (value) {
-          buffer += decoder.decode(value, { stream: true });
-
-          // Split by newlines and yield complete lines
-          const lines = buffer.split('\n');
-          buffer = lines.pop() || ''; // Keep the last incomplete line in buffer
-
-          for (const line of lines) {
-            if (line.trim()) {
-              yield line;
-            }
+        for (const line of lines) {
+          if (line.trim()) {
+            yield line;
           }
         }
       }
-    } finally {
-      reader.releaseLock();
-    }
 
-    // Wait for process to complete and check exit code
-    const exitCode = await proc.exited;
-    if (exitCode !== 0) {
-      const stderr = await new Response(proc.stderr).text();
-      throw new ClaudeProcessError(
-        `Command failed with exit code ${exitCode}`,
-        {
-          exitCode,
-          stderr,
-        }
-      );
-    }
+      // Yield any remaining buffer
+      if (buffer.trim()) {
+        yield buffer;
+      }
+    })();
   } catch (error) {
-    if (error instanceof ClaudeTimeoutError || error instanceof ClaudeProcessError) {
-      throw error;
-    }
-
     throw new ClaudeProcessError(
       `Streaming execution failed: ${error instanceof Error ? error.message : String(error)}`,
       {
         code: 'STREAM_FAILED',
       }
     );
+  } finally {
+    if (timeoutId) clearTimeout(timeoutId);
   }
+
+  // Wait for process to complete and check exit code
+  await new Promise<void>((resolve, reject) => {
+    proc.on('close', (exitCode: number | null) => {
+      if (exitCode !== 0) {
+        reject(new ClaudeProcessError(
+          `Command failed with exit code ${exitCode}`,
+          {
+            exitCode: exitCode ?? 1,
+            stderr,
+          }
+        ));
+      } else {
+        resolve();
+      }
+    });
+
+    proc.on('error', (error: Error) => {
+      reject(new ClaudeProcessError(
+        `Process error: ${error.message}`,
+        {
+          code: 'PROCESS_ERROR',
+        }
+      ));
+    });
+  });
 }
 
 /**
  * Check if the claude CLI is available
  */
 export async function checkClaudeAvailable(): Promise<boolean> {
-  try {
-    const proc = Bun.spawn(['which', 'claude'], {
-      stdout: 'pipe',
-      stderr: 'pipe',
+  return new Promise((resolve) => {
+    const proc = spawn('which', ['claude'], {
+      stdio: ['ignore', 'pipe', 'pipe'],
     });
 
-    const exitCode = await proc.exited;
-    return exitCode === 0;
-  } catch {
-    return false;
-  }
+    proc.on('close', (exitCode: number | null) => {
+      resolve(exitCode === 0);
+    });
+
+    proc.on('error', () => {
+      resolve(false);
+    });
+  });
 }
 
 /**
  * Get Claude CLI version
  */
 export async function getClaudeVersion(): Promise<string | null> {
-  try {
-    const proc = Bun.spawn(['claude', '--version'], {
-      stdout: 'pipe',
-      stderr: 'pipe',
+  return new Promise((resolve) => {
+    const proc = spawn('claude', ['--version'], {
+      stdio: ['ignore', 'pipe', 'pipe'],
     });
 
-    const stdout = await new Response(proc.stdout).text();
-    const exitCode = await proc.exited;
+    let stdout = '';
 
-    if (exitCode === 0) {
-      return stdout.trim();
-    }
+    proc.stdout.on('data', (data: Buffer) => {
+      stdout += data.toString();
+    });
 
-    return null;
-  } catch {
-    return null;
-  }
+    proc.on('close', (exitCode: number | null) => {
+      if (exitCode === 0) {
+        resolve(stdout.trim());
+      } else {
+        resolve(null);
+      }
+    });
+
+    proc.on('error', () => {
+      resolve(null);
+    });
+  });
 }

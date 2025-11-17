@@ -36,26 +36,26 @@
  */
 
 // Internal imports for convenience functions
-import type { Claude } from './types.ts';
-import { createClaudeCode as _createClaudeCode } from './claude-code.ts';
+import type { Claude } from './types.js';
+import { createClaudeCode as _createClaudeCode } from './claude-code.js';
 
 // ============= Core Exports =============
 
 // ClaudeCode namespace and creation
-export { createClaudeCode, type ClaudeCode } from './claude-code.ts';
+export { createClaudeCode, type ClaudeCode } from './claude-code.js';
 
 // Agent namespace and creation
-export { createAgent, type Agent } from './agent.ts';
+export { createAgent, type Agent } from './agent.js';
 
 // Session storage
-export { SessionStore, createSessionStore } from './session-store.ts';
+export { SessionStore, createSessionStore } from './session-store.js';
 
 // Built-in tools catalog
-export { type ClaudeCode as BuiltInTools } from './built-in-tools.ts';
+export { type ClaudeCode as BuiltInTools } from './built-in-tools.js';
 
 // ============= Types =============
 
-export type { Claude } from './types.ts';
+export type { Claude } from './types.js';
 
 // ============= Errors =============
 
@@ -67,7 +67,7 @@ export {
   ClaudeAPIError,
   ClaudeSessionError,
   ClaudeConfigError,
-} from './error.ts';
+} from './error.js';
 
 // ============= Utilities =============
 
@@ -88,7 +88,7 @@ export {
   createUserInput,
   createStreamInput,
   validateMessage,
-} from './stream-parser.ts';
+} from './stream-parser.js';
 
 // Process utilities (for advanced use)
 export {
@@ -97,7 +97,7 @@ export {
   executeStreaming,
   checkClaudeAvailable,
   getClaudeVersion,
-} from './process.ts';
+} from './process.js';
 
 // ============= Convenience Functions =============
 
@@ -139,12 +139,12 @@ export async function* stream(prompt: string, options?: Claude.StreamOptions): A
 /**
  * @deprecated Use `createClaudeCode()` instead
  */
-export { ClaudeClient } from './client.ts';
+export { ClaudeClient } from './client.js';
 
 /**
  * @deprecated Use `Agent` with `createAgent()` instead
  */
-export { Session, SessionManager } from './session-manager.ts';
+export { Session, SessionManager } from './session-manager.js';
 
 /**
  * @deprecated Use `createClaudeCode()` instead

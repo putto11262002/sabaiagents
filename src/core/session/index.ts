@@ -1,13 +1,14 @@
 /**
  * Session namespace - SQLite-based session storage for Claude Code
  *
- * @see https://bun.sh/docs/api/sqlite
+ * @see https://github.com/WiseLibs/better-sqlite3
  * @see https://code.claude.com/docs/en/headless#sessions
  */
 
-import { Database } from 'bun:sqlite';
-import type { Claude } from '../../claude/types.ts';
-import { ClaudeSessionError } from '../../claude/error.ts';
+import Database from 'better-sqlite3';
+import { statSync } from 'node:fs';
+import type { Claude } from '../../claude/types.js';
+import { ClaudeSessionError } from '../../claude/error.js';
 
 /**
  * Session namespace containing all session-related functionality
@@ -77,7 +78,7 @@ export namespace Session {
    * SQLite-based session store implementation
    */
   class SQLiteStore implements Store {
-    private db: Database;
+    private db: Database.Database;
 
     constructor(dbPath: string = ':memory:') {
       this.db = new Database(dbPath);
@@ -290,9 +291,9 @@ export namespace Session {
 
       let databaseSize = 0;
       try {
-        if (this.db.filename !== ':memory:') {
-          const file = Bun.file(this.db.filename);
-          databaseSize = file.size;
+        if (this.db.name !== ':memory:') {
+          const stats = statSync(this.db.name);
+          databaseSize = stats.size;
         }
       } catch {
         // Ignore errors for in-memory databases

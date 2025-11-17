@@ -7,7 +7,7 @@
  * - Session namespace
  */
 
-import { ClaudeCode, Agent, Session, type Claude } from '../src/index.ts';
+import { ClaudeCode, Agent, Session, type Claude } from '../src/index.js';
 
 async function main() {
   console.log('=== TypeScript Namespace Architecture Demo ===\n');

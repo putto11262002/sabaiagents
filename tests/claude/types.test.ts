@@ -2,8 +2,8 @@
  * Tests for type definitions
  */
 
-import { describe, test, expect } from 'bun:test';
-import type { Claude } from '../../src/claude/types.ts';
+import { describe, test, expect } from 'vitest';
+import type { Claude } from '../../src/claude/types.js';
 
 describe('Claude Types', () => {
   describe('Message Content Types', () => {

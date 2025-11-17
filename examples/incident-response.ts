@@ -4,8 +4,8 @@
  * Demonstrates a real-world use case for automated incident response
  */
 
-import { ClaudeClient } from '../src/claude/index.ts';
-import type { Claude } from '../src/claude/index.ts';
+import { ClaudeClient } from '../src/claude/index.js';
+import type { Claude } from '../src/claude/index.js';
 
 interface IncidentReport {
   severity: string;

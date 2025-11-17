@@ -2,8 +2,8 @@
  * Stream-JSON parser for Claude CLI output
  */
 
-import type { Claude } from './types.ts';
-import { ClaudeParseError } from './error.ts';
+import type { Claude } from './types.js';
+import { ClaudeParseError } from './error.js';
 
 /**
  * Parse a single line of stream-JSON output
@@ -85,7 +85,8 @@ export function filterMessages<T extends Claude.StreamMessage['type']>(
  */
 export function getResult(messages: Claude.StreamMessage[]): Claude.ResultMessage | null {
   const results = filterMessages(messages, 'result');
-  return results.length > 0 ? results[results.length - 1] : null;
+  const lastResult = results[results.length - 1];
+  return lastResult !== undefined ? lastResult : null;
 }
 
 /**
