@@ -1,13 +1,5 @@
 /**
- * Main entry point for the application
+ * Main entry point - exports Claude Code client library
  */
 
-async function main() {
-  console.log("Hello via Bun!");
-  console.log(`Bun version: ${Bun.version}`);
-}
-
-main().catch((error) => {
-  console.error("Error:", error);
-  process.exit(1);
-});
+export * from './claude/index.ts';
