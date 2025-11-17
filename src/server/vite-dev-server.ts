@@ -70,7 +70,8 @@ export async function setupViteDev(app: Express): Promise<ViteDevServer> {
   app.use(vite.middlewares);
 
   // Serve index.html with Vite transformations for all non-API routes
-  app.use('*', async (req: Request, res: Response, next: NextFunction) => {
+  // Note: In Express v5, we can't use '*' - we need to handle this differently
+  app.get('*', async (req: Request, res: Response, next: NextFunction) => {
     try {
       const url = req.originalUrl;
 
@@ -147,7 +148,8 @@ export function setupProd(app: Express): void {
   }
 
   // Serve index.html for all non-API routes (SPA routing)
-  app.use('*', (req: Request, res: Response, next: NextFunction) => {
+  // Note: In Express v5, we can't use '*' - we use get('*') for HTML requests
+  app.get('*', (req: Request, res: Response, next: NextFunction) => {
     try {
       const url = req.originalUrl;
 
