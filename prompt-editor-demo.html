@@ -441,10 +441,10 @@ Hover over any error and you'll see suggested replacements!
 Click on a suggestion to automatically fix the error.
 `;
 
-    // Create the editor
+    // Create the editor with validation demo content by default to show error underlines
     const editor = createPromptEditor(
       document.getElementById('editor-container'),
-      exampleContent,
+      validationDemoContent,
       (content) => {
         // This callback fires on every change
         console.log('Content changed:', content);

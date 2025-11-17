@@ -20,7 +20,7 @@ import { markdown } from '@codemirror/lang-markdown';
 import { autocompletion, CompletionContext, CompletionResult } from '@codemirror/autocomplete';
 import { syntaxHighlighting, HighlightStyle } from '@codemirror/language';
 import { tags } from '@lezer/highlight';
-import { linter, Diagnostic } from '@codemirror/lint';
+import { linter, lintGutter, Diagnostic } from '@codemirror/lint';
 
 // ============================================================================
 // DATA: Mock data for autocomplete suggestions
@@ -757,6 +757,7 @@ export function createPromptEditor(
     promptEditorTheme,
 
     // 6. Validation/Linting
+    lintGutter(),              // Show error markers in gutter
     linter(promptLinter, {
       delay: 500,              // Debounce validation by 500ms
       needsRefresh: undefined  // Revalidate on any document change

@@ -12,26 +12,26 @@ const EXAMPLE_CONTENT = `# AI Assistant Prompt
 
 You are an AI assistant with access to powerful tools.
 
-## Context Variables
+## Context Variables (hover over errors to see suggestions!)
 
 - Current user: {user}
 - Current time: {now}
-- Session: {session_id}
-- Model: {model}
+- Invalid example: {wrong_var} ← This will show a red underline!
 
 ## Available Commands
 
 Use @search to find information in the knowledge base.
-Use @analyze to process and analyze data.
-Use @summarize to create concise summaries.
+Use @invalid_cmd to demonstrate errors ← Red underline here!
 
 ## Tool Configuration
 
-tools: search, calculator, web_fetch
+tools: search, calculator, invalid_tool ← Error on invalid_tool!
 
-## Instructions
+## Valid Examples
 
-Please help the user with their request using the available tools and commands.
+- Valid user: {user}
+- Valid command: @analyze
+- Valid tools: search, calculator, web_fetch
 `;
 
 export function PromptEditorPage() {
