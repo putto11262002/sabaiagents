@@ -257,7 +257,7 @@
     <!-- Header -->
     <div class="header">
       <h1>🎯 CodeMirror Prompt Editor</h1>
-      <p>A powerful markdown editor with custom syntax and intelligent autocomplete</p>
+      <p>A powerful markdown editor with custom syntax, intelligent autocomplete, and real-time validation</p>
     </div>
 
     <!-- Main Content -->
@@ -275,6 +275,7 @@
             <button class="btn btn-primary" id="btn-get-content">Get Content</button>
             <button class="btn btn-secondary" id="btn-clear">Clear</button>
             <button class="btn btn-secondary" id="btn-load-example">Load Example</button>
+            <button class="btn btn-secondary" id="btn-load-errors">Show Validation Demo</button>
           </div>
 
           <div style="margin-top: 20px;">
@@ -324,9 +325,23 @@
 Analyze the data and provide insights.</div>
           </div>
 
+          <!-- Validation -->
+          <div class="info-section">
+            <h3>🔍 Validation</h3>
+            <div class="syntax-item">
+              <div><strong>Real-time error checking</strong></div>
+              <p>Invalid names are underlined in red with helpful error messages. Hover to see quick fixes!</p>
+              <p style="margin-top: 8px; color: #d73a49;">
+                ❌ <code>{invalid}</code> - Unknown variable<br>
+                ❌ <code>@wrong</code> - Unknown command<br>
+                ❌ <code>tools: badtool</code> - Unknown tool
+              </p>
+            </div>
+          </div>
+
           <!-- Keyboard Shortcuts -->
           <div class="info-section">
-            <h3>Keyboard Shortcuts</h3>
+            <h3>⌨️ Keyboard Shortcuts</h3>
             <div class="shortcuts">
               <div class="shortcut-key">Ctrl+Space</div>
               <div class="shortcut-desc">Force show autocomplete</div>
@@ -389,6 +404,43 @@ const example = "Hello World";
 \`\`\`
 `;
 
+    // Example with intentional errors to demonstrate validation
+    const validationDemoContent = `# 🔍 Validation Demo
+
+Try hovering over the red underlined items below to see error messages!
+
+## ❌ Invalid Variables
+
+Hello {invalid_user}! The current time is {wrong_time}.
+
+Valid variables: {user}, {now}, {date}, {time}, {session_id}, {model}
+
+## ❌ Invalid Commands
+
+Please @wrong_command this text and @invalid_action that code.
+
+Valid commands: @search, @analyze, @summarize, @translate, @format, @execute
+
+## ❌ Invalid Tools
+
+tools: invalid_tool, wrong_tool, bad_name
+
+Valid tools: search, calculator, web_fetch, code_executor, file_reader, image_analyzer
+
+## ✅ Correct Examples
+
+Hello {user}! Today is {date}.
+
+Please @search for information and @analyze the results.
+
+tools: search, calculator, web_fetch
+
+## 💡 Quick Fixes
+
+Hover over any error and you'll see suggested replacements!
+Click on a suggestion to automatically fix the error.
+`;
+
     // Create the editor
     const editor = createPromptEditor(
       document.getElementById('editor-container'),
@@ -414,6 +466,12 @@ const example = "Hello World";
     // Button: Load Example
     document.getElementById('btn-load-example').addEventListener('click', () => {
       setEditorContent(editor, exampleContent);
+      document.getElementById('output').textContent = '';
+    });
+
+    // Button: Load Validation Demo
+    document.getElementById('btn-load-errors').addEventListener('click', () => {
+      setEditorContent(editor, validationDemoContent);
       document.getElementById('output').textContent = '';
     });
 

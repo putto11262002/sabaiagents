@@ -29,6 +29,14 @@ A powerful markdown-based prompt editor with custom syntax highlighting and inte
 - **Context-aware** - shows relevant suggestions based on cursor position
 - **Descriptions** - hover over suggestions to see details
 
+### 🔍 Real-time Validation
+
+- **Error detection** - instantly identifies invalid variables, commands, and tools
+- **Visual feedback** - red squiggly underlines for errors (like spell-check)
+- **Helpful messages** - hover over errors to see what's wrong
+- **Quick fixes** - one-click suggestions to correct mistakes
+- **Smart suggestions** - shows similar valid options based on what you typed
+
 ### 🎨 Markdown Support
 
 Full markdown syntax highlighting including:
@@ -70,6 +78,7 @@ Then open http://localhost:3000 in your browser.
 3. **Type `tools:`** - You'll see tool suggestions like `search`, `calculator`
 4. **Use arrow keys** to navigate and **Enter** to select
 5. **Press Escape** to close the autocomplete popup
+6. **Click "Show Validation Demo"** - See how errors are detected and corrected
 
 ## Project Structure
 
@@ -78,6 +87,7 @@ Then open http://localhost:3000 in your browser.
 ├── prompt-editor-demo.html       # Demo page with UI
 ├── serve-demo.ts                 # Bun development server
 ├── CODEMIRROR_GUIDE.md          # Detailed implementation guide
+├── VALIDATION_GUIDE.md          # Validation system documentation
 └── PROMPT_EDITOR_README.md      # This file
 ```
 
@@ -120,6 +130,16 @@ Comprehensive guide covering:
 - Implementation details for each feature
 - Performance considerations
 - Styling and theming
+
+### `VALIDATION_GUIDE.md`
+
+Complete validation system documentation:
+- Validation concepts and architecture
+- How the linter works step-by-step
+- Implementation details with code examples
+- Customization guide for adding new rules
+- Performance optimization techniques
+- Troubleshooting common issues
 
 ## Usage in Your Project
 
@@ -400,13 +420,67 @@ AVAILABLE_VARIABLES.push(...variables);
 const editor = createPromptEditor(...);
 ```
 
+## Validation System
+
+The editor includes a powerful real-time validation system that checks your syntax as you type.
+
+### What Gets Validated
+
+- **{variables}** - Checks if variable names exist in `AVAILABLE_VARIABLES`
+- **@commands** - Checks if command names exist in `AVAILABLE_COMMANDS`
+- **tools:** - Checks if tool names exist in `AVAILABLE_TOOLS`
+
+### Visual Feedback
+
+Invalid syntax gets a red squiggly underline, just like spell-check:
+
+```
+❌ Hello {invalid_name}!
+          ^^^^^^^^^^^^^
+          Unknown variable: '{invalid_name}'
+```
+
+### Quick Fixes
+
+Hover over any error to see:
+- **Error message** explaining what's wrong
+- **Suggested corrections** based on available options
+- **One-click fixes** to replace with the correct value
+
+### Example
+
+```
+Type: tools: wrong_tool
+      Red underline appears on "wrong_tool"
+
+Hover: Tooltip shows:
+       "Unknown tool: 'wrong_tool'"
+       "Available tools: search, calculator, web_fetch..."
+
+       Quick fixes:
+       • Replace with search
+       • Replace with calculator
+
+Click: Error corrected instantly!
+```
+
+### Learn More
+
+See [VALIDATION_GUIDE.md](./VALIDATION_GUIDE.md) for:
+- Complete architecture documentation
+- How validation works step-by-step
+- Customization guide
+- Performance optimization
+- Troubleshooting
+
 ## Next Steps
 
-1. **Add validation**: Show errors for malformed syntax
+1. ✅ **Validation** - Real-time error checking with quick fixes (COMPLETED)
 2. **Add snippets**: Template expansions (e.g., `cmd` → full command template)
 3. **Add preview**: Live preview of rendered markdown
 4. **Add export**: Export to different formats
 5. **Add collaborative editing**: Multiple users editing same document
+6. **Extend validation**: Add warning and info severity levels for deprecations and hints
 
 ## Resources
 
