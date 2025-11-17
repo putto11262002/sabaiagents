@@ -3,40 +3,62 @@
  *
  * A comprehensive TypeScript library for interacting with Claude Code in headless mode.
  *
+ * ## New Architecture
+ *
+ * This library uses a namespace-based design:
+ * - **ClaudeCode**: Core functionality (use `createClaudeCode()`)
+ * - **Agent**: Pre-configured templates (use `createAgent()`)
+ * - **SessionStore**: SQLite-based session persistence (use `createSessionStore()`)
+ *
+ * @see https://code.claude.com/docs/en/headless - Official Documentation
+ *
  * @example
  * ```typescript
- * import { ClaudeClient } from './claude';
+ * import { createClaudeCode, createAgent, createSessionStore } from './claude';
  *
- * const client = new ClaudeClient();
+ * // Basic ClaudeCode instance
+ * const claude = createClaudeCode();
+ * const response = await claude.query('Hello, Claude!');
  *
- * // Simple query
- * const response = await client.query('Hello, Claude!');
- * console.log(response.text);
- *
- * // Streaming query
- * for await (const message of client.stream('Explain TypeScript generics')) {
- *   if (message.type === 'assistant') {
- *     console.log(message);
+ * // Agent with session storage
+ * const store = createSessionStore('./sessions.db');
+ * const agent = createAgent({
+ *   name: 'code-reviewer',
+ *   cwd: '/path/to/project',
+ *   sessionStore: store,
+ *   claudeConfig: {
+ *     allowedTools: ['Read', 'Grep', 'Glob'],
  *   }
- * }
+ * });
  *
- * // Session-based conversation
- * const session = client.createSession();
- * await session.send('What is 2 + 2?');
- * await session.send('What about 3 + 3?');
+ * const result = await agent.run('Review this code');
  * ```
  */
 
-// Export main client
-export { ClaudeClient, createClient } from './client.ts';
+// Internal imports for convenience functions
+import type { Claude } from './types.ts';
+import { createClaudeCode as _createClaudeCode } from './claude-code.ts';
 
-// Export session management
-export { Session, SessionManager } from './session-manager.ts';
+// ============= Core Exports =============
 
-// Export types
+// ClaudeCode namespace and creation
+export { createClaudeCode, type ClaudeCode } from './claude-code.ts';
+
+// Agent namespace and creation
+export { createAgent, type Agent } from './agent.ts';
+
+// Session storage
+export { SessionStore, createSessionStore } from './session-store.ts';
+
+// Built-in tools catalog
+export { type ClaudeCode as BuiltInTools } from './built-in-tools.ts';
+
+// ============= Types =============
+
 export type { Claude } from './types.ts';
 
-// Export errors
+// ============= Errors =============
+
 export {
   ClaudeError,
   ClaudeProcessError,
@@ -47,7 +69,9 @@ export {
   ClaudeConfigError,
 } from './error.ts';
 
-// Export stream parser utilities
+// ============= Utilities =============
+
+// Stream parser utilities
 export {
   parseLine,
   parseStream,
@@ -66,7 +90,7 @@ export {
   validateMessage,
 } from './stream-parser.ts';
 
-// Export process utilities
+// Process utilities (for advanced use)
 export {
   buildArgs,
   executeCommand,
@@ -75,20 +99,57 @@ export {
   getClaudeVersion,
 } from './process.ts';
 
+// ============= Convenience Functions =============
+
 /**
- * Convenience function to create a client and execute a query
+ * Quick query without creating an instance
+ *
+ * @example
+ * ```typescript
+ * import { query } from './claude';
+ * const response = await query('What is 2 + 2?');
+ * ```
  */
 export async function query(prompt: string, options?: Claude.QueryOptions): Promise<Claude.Response> {
-  const client = createClient();
-  return client.query(prompt, options);
+  const claude = _createClaudeCode();
+  return claude.query(prompt, options);
 }
 
 /**
- * Convenience function to create a client and stream a query
+ * Quick streaming query without creating an instance
+ *
+ * @example
+ * ```typescript
+ * import { stream } from './claude';
+ * for await (const message of stream('Explain recursion')) {
+ *   console.log(message);
+ * }
+ * ```
  */
 export async function* stream(prompt: string, options?: Claude.StreamOptions): AsyncIterableIterator<Claude.StreamMessage> {
-  const client = createClient();
-  for await (const message of client.stream(prompt, options)) {
+  const claude = _createClaudeCode();
+  for await (const message of claude.stream(prompt, options)) {
     yield message;
   }
+}
+
+// ============= Legacy Exports (Deprecated) =============
+// These are kept for backward compatibility but will be removed in a future version
+
+/**
+ * @deprecated Use `createClaudeCode()` instead
+ */
+export { ClaudeClient } from './client.ts';
+
+/**
+ * @deprecated Use `Agent` with `createAgent()` instead
+ */
+export { Session, SessionManager } from './session-manager.ts';
+
+/**
+ * @deprecated Use `createClaudeCode()` instead
+ */
+export function createClient() {
+  const { ClaudeClient } = require('./client.ts');
+  return new ClaudeClient();
 }
