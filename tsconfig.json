@@ -16,7 +16,7 @@
     "resolveJsonModule": true,
 
     // Output settings for tsx/ts-node
-    "noEmit": true,
+    "noEmit": false,
     "outDir": "./dist",
 
     // Best practices
@@ -33,5 +33,5 @@
     "noPropertyAccessFromIndexSignature": false
   },
   "include": ["src/**/*", "tests/**/*"],
-  "exclude": ["node_modules", "dist"]
+  "exclude": ["node_modules", "dist", "src/frontend/**/*"]
 }

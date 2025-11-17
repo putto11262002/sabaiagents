@@ -4,9 +4,12 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "dev": "tsx watch src/index.ts",
-    "start": "node --loader tsx src/index.ts",
-    "build": "tsc",
+    "dev": "NODE_ENV=development tsx watch src/index.ts",
+    "build": "npm run build:client && npm run build:server",
+    "build:client": "vite build",
+    "build:server": "tsc",
+    "start": "NODE_ENV=production node dist/index.js",
+    "start:dev": "tsx src/index.ts",
     "test": "vitest",
     "test:run": "vitest run",
     "typecheck": "tsc --noEmit"

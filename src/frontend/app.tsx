@@ -1,3 +1,6 @@
+// Vite modulepreload polyfill for backend integration
+import 'vite/modulepreload-polyfill';
+
 import React from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter, Routes, Route } from "react-router";
