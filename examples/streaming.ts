@@ -4,8 +4,8 @@
  * Demonstrates real-time streaming of Claude's response
  */
 
-import { ClaudeClient, extractText } from '../src/claude/index.ts';
-import type { Claude } from '../src/claude/index.ts';
+import { ClaudeClient, extractText } from '../src/claude/index.js';
+import type { Claude } from '../src/claude/index.js';
 
 async function main() {
   const client = new ClaudeClient();

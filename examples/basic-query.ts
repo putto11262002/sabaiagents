@@ -4,7 +4,7 @@
  * Demonstrates simple text-based queries to Claude Code
  */
 
-import { ClaudeClient } from '../src/claude/index.ts';
+import { ClaudeClient } from '../src/claude/index.js';
 
 async function main() {
   const client = new ClaudeClient();

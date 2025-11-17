@@ -1,106 +1,86 @@
 
-Default to using Bun instead of Node.js.
+Default to using Node.js with TypeScript.
 
-- Use `bun <file>` instead of `node <file>` or `ts-node <file>`
-- Use `bun test` instead of `jest` or `vitest`
-- Use `bun build <file.html|file.ts|file.css>` instead of `webpack` or `esbuild`
-- Use `bun install` instead of `npm install` or `yarn install` or `pnpm install`
-- Use `bun run <script>` instead of `npm run <script>` or `yarn run <script>` or `pnpm run <script>`
-- Bun automatically loads .env, so don't use dotenv.
+- Use `tsx <file>` for running TypeScript files during development
+- Use `npm test` or `vitest` for running tests
+- Use `npm install` for installing dependencies
+- Use `npm run <script>` for running package.json scripts
+- Use `dotenv` package for loading .env files
 
 ## APIs
 
-- `Bun.serve()` supports WebSockets, HTTPS, and routes. Don't use `express`.
-- `bun:sqlite` for SQLite. Don't use `better-sqlite3`.
-- `Bun.redis` for Redis. Don't use `ioredis`.
-- `Bun.sql` for Postgres. Don't use `pg` or `postgres.js`.
-- `WebSocket` is built-in. Don't use `ws`.
-- Prefer `Bun.file` over `node:fs`'s readFile/writeFile
-- Bun.$`ls` instead of execa.
+- `express` for HTTP server with routes and middleware
+- `better-sqlite3` for SQLite databases
+- `node:child_process` for spawning processes
+- `node:fs` for file system operations
+- Native `WebSocket` or `ws` package for WebSocket support
 
 ## Testing
 
-Use `bun test` to run tests.
+Use `vitest` to run tests.
 
 ```ts#index.test.ts
-import { test, expect } from "bun:test";
+import { test, expect, describe } from "vitest";
 
-test("hello world", () => {
-  expect(1).toBe(1);
+describe("example test suite", () => {
+  test("hello world", () => {
+    expect(1).toBe(1);
+  });
 });
 ```
 
-## Frontend
-
-Use HTML imports with `Bun.serve()`. Don't use `vite`. HTML imports fully support React, CSS, Tailwind.
-
-Server:
-
-```ts#index.ts
-import index from "./index.html"
-
-Bun.serve({
-  routes: {
-    "/": index,
-    "/api/users/:id": {
-      GET: (req) => {
-        return new Response(JSON.stringify({ id: req.params.id }));
-      },
-    },
-  },
-  // optional websocket support
-  websocket: {
-    open: (ws) => {
-      ws.send("Hello, world!");
-    },
-    message: (ws, message) => {
-      ws.send(message);
-    },
-    close: (ws) => {
-      // handle close
-    }
-  },
-  development: {
-    hmr: true,
-    console: true,
-  }
-})
-```
-
-HTML files can import .tsx, .jsx or .js files directly and Bun's bundler will transpile & bundle automatically. `<link>` tags can point to stylesheets and Bun's CSS bundler will bundle.
-
-```html#index.html
-<html>
-  <body>
-    <h1>Hello, world!</h1>
-    <script type="module" src="./frontend.tsx"></script>
-  </body>
-</html>
-```
-
-With the following `frontend.tsx`:
-
-```tsx#frontend.tsx
-import React from "react";
-
-// import .css files directly and it works
-import './index.css';
-
-import { createRoot } from "react-dom/client";
-
-const root = createRoot(document.body);
-
-export default function Frontend() {
-  return <h1>Hello, world!</h1>;
-}
-
-root.render(<Frontend />);
-```
-
-Then, run index.ts
+Run tests with:
 
 ```sh
-bun --hot ./index.ts
+npm test
+# or
+npm run test:run
 ```
 
-For more information, read the Bun API docs in `node_modules/bun-types/docs/**.md`.
+## Server
+
+Use Express for serving HTTP requests.
+
+```ts#index.ts
+import express from 'express';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
+import dotenv from 'dotenv';
+
+dotenv.config();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+const app = express();
+const port = process.env.PORT || 3000;
+
+app.use(express.json());
+app.use(express.static(join(__dirname, 'public')));
+
+app.get('/api/users/:id', (req, res) => {
+  res.json({ id: req.params.id });
+});
+
+app.listen(port, () => {
+  console.log(`Server running at http://localhost:${port}`);
+});
+```
+
+## Development
+
+Run the development server with hot reload:
+
+```sh
+npm run dev
+# Uses tsx watch for automatic reloading
+```
+
+## ESM Compatibility
+
+This project uses ESM (ES Modules). Important notes:
+
+- All relative imports must include `.js` extensions (even for `.ts` files)
+- Use `import` instead of `require`
+- Use `export` instead of `module.exports`
+- `__dirname` and `__filename` are not available by default, use `fileURLToPath` and `dirname` from `node:url` and `node:path`

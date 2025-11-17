@@ -8,11 +8,11 @@
  * @see https://code.claude.com/docs/en/headless
  */
 
-import type { Claude } from './types.ts';
-import { createClaudeCode, type ClaudeCode } from './claude-code.ts';
-import type { SessionStore } from './session-store.ts';
-import { executeCommand, executeStreaming, buildArgs } from './process.ts';
-import { parseStream } from './stream-parser.ts';
+import type { Claude } from './types.js';
+import { createClaudeCode, type ClaudeCode } from './claude-code.js';
+import type { SessionStore } from './session-store.js';
+import { executeCommand, executeStreaming, buildArgs } from './process.js';
+import { parseStream } from './stream-parser.js';
 
 /**
  * Agent namespace

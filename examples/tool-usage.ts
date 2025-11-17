@@ -4,8 +4,8 @@
  * Demonstrates configuring allowed and disallowed tools
  */
 
-import { ClaudeClient, extractToolUses } from '../src/claude/index.ts';
-import type { Claude } from '../src/claude/index.ts';
+import { ClaudeClient, extractToolUses } from '../src/claude/index.js';
+import type { Claude } from '../src/claude/index.js';
 
 async function main() {
   const client = new ClaudeClient();

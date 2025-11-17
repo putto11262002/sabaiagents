@@ -2,11 +2,11 @@
  * Main ClaudeClient class for interacting with Claude Code headless mode
  */
 
-import type { Claude } from './types.ts';
-import { ClaudeAPIError, ClaudeProcessError } from './error.ts';
-import { executeCommand, executeStreaming, buildArgs, checkClaudeAvailable, getClaudeVersion } from './process.ts';
-import { parseStream, collectStream } from './stream-parser.ts';
-import { Session, SessionManager } from './session-manager.ts';
+import type { Claude } from './types.js';
+import { ClaudeAPIError, ClaudeProcessError } from './error.js';
+import { executeCommand, executeStreaming, buildArgs, checkClaudeAvailable, getClaudeVersion } from './process.js';
+import { parseStream, collectStream } from './stream-parser.js';
+import { Session, SessionManager } from './session-manager.js';
 
 /**
  * Main client for Claude Code headless mode
