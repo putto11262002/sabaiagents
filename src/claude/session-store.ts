@@ -1,34 +1,41 @@
 /**
- * Session storage using better-sqlite3 database
+ * Session storage using Drizzle ORM with better-sqlite3
  *
- * @see https://github.com/WiseLibs/better-sqlite3
+ * @see https://orm.drizzle.team/docs/get-started-sqlite
  */
 
 import Database from 'better-sqlite3';
+import { eq, desc, sql } from 'drizzle-orm';
 import { statSync } from 'node:fs';
+import { createDbFromClient } from '../db/index.js';
+import { sessions, conversationHistory, streamMessages } from '../db/schema.js';
 import type { Claude } from './types.js';
 import { ClaudeSessionError } from './error.js';
 
 /**
- * Session store using SQLite for persistence
+ * Session store using Drizzle ORM for persistence
  */
 export class SessionStore {
-  private db: Database.Database;
+  private sqlite: Database.Database;
+  private db: ReturnType<typeof createDbFromClient>;
 
   constructor(dbPath: string = ':memory:') {
     // Initialize SQLite database
-    this.db = new Database(dbPath);
+    this.sqlite = new Database(dbPath);
+
+    // Create Drizzle instance
+    this.db = createDbFromClient(this.sqlite);
 
     // Create tables
     this.initTables();
   }
 
   /**
-   * Initialize database tables
+   * Initialize database tables using Drizzle Kit migrations or raw SQL
    */
   private initTables(): void {
-    // Sessions table
-    this.db.exec(`
+    // Create tables using raw SQL for now (can be replaced with migrations)
+    this.sqlite.exec(`
       CREATE TABLE IF NOT EXISTS sessions (
         id TEXT PRIMARY KEY,
         created_at INTEGER NOT NULL,
@@ -39,8 +46,7 @@ export class SessionStore {
       )
     `);
 
-    // Conversation history table
-    this.db.exec(`
+    this.sqlite.exec(`
       CREATE TABLE IF NOT EXISTS conversation_history (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         session_id TEXT NOT NULL,
@@ -51,8 +57,7 @@ export class SessionStore {
       )
     `);
 
-    // Stream messages table (for detailed message logging)
-    this.db.exec(`
+    this.sqlite.exec(`
       CREATE TABLE IF NOT EXISTS stream_messages (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         session_id TEXT NOT NULL,
@@ -63,20 +68,20 @@ export class SessionStore {
       )
     `);
 
-    // Create indexes for better query performance
-    this.db.exec(`
+    // Create indexes
+    this.sqlite.exec(`
       CREATE INDEX IF NOT EXISTS idx_conversation_session
-      ON conversation_history(session_id);
+      ON conversation_history(session_id)
     `);
 
-    this.db.exec(`
+    this.sqlite.exec(`
       CREATE INDEX IF NOT EXISTS idx_stream_session
-      ON stream_messages(session_id);
+      ON stream_messages(session_id)
     `);
 
-    this.db.exec(`
+    this.sqlite.exec(`
       CREATE INDEX IF NOT EXISTS idx_sessions_last_active
-      ON sessions(last_active DESC);
+      ON sessions(last_active DESC)
     `);
   }
 
@@ -84,43 +89,46 @@ export class SessionStore {
    * Create or update a session
    */
   upsertSession(sessionData: Claude.SessionMetadata): void {
-    const stmt = this.db.prepare(`
-      INSERT INTO sessions (id, created_at, last_active, turns, total_cost_usd, metadata)
-      VALUES (?, ?, ?, ?, ?, ?)
-      ON CONFLICT(id) DO UPDATE SET
-        last_active = excluded.last_active,
-        turns = excluded.turns,
-        total_cost_usd = excluded.total_cost_usd,
-        metadata = excluded.metadata
-    `);
-
-    stmt.run(
-      sessionData.id,
-      sessionData.created_at,
-      sessionData.last_active,
-      sessionData.turns,
-      sessionData.total_cost_usd,
-      JSON.stringify(sessionData)
-    );
+    this.db
+      .insert(sessions)
+      .values({
+        id: sessionData.id,
+        createdAt: new Date(sessionData.created_at),
+        lastActive: new Date(sessionData.last_active),
+        turns: sessionData.turns,
+        totalCostUsd: sessionData.total_cost_usd,
+        metadata: JSON.stringify(sessionData),
+      })
+      .onConflictDoUpdate({
+        target: sessions.id,
+        set: {
+          lastActive: new Date(sessionData.last_active),
+          turns: sessionData.turns,
+          totalCostUsd: sessionData.total_cost_usd,
+          metadata: JSON.stringify(sessionData),
+        },
+      })
+      .run();
   }
 
   /**
    * Get session metadata by ID
    */
   getSession(sessionId: string): Claude.SessionMetadata | null {
-    const stmt = this.db.prepare(`
-      SELECT * FROM sessions WHERE id = ?
-    `);
+    const result = this.db
+      .select()
+      .from(sessions)
+      .where(eq(sessions.id, sessionId))
+      .get();
 
-    const row = stmt.get(sessionId) as any;
-    if (!row) return null;
+    if (!result) return null;
 
     return {
-      id: row.id,
-      created_at: row.created_at,
-      last_active: row.last_active,
-      turns: row.turns,
-      total_cost_usd: row.total_cost_usd,
+      id: result.id,
+      created_at: result.createdAt.getTime(),
+      last_active: result.lastActive.getTime(),
+      turns: result.turns,
+      total_cost_usd: result.totalCostUsd,
     };
   }
 
@@ -128,36 +136,36 @@ export class SessionStore {
    * Add a conversation turn to history
    */
   addConversationTurn(sessionId: string, turn: Claude.ConversationTurn): void {
-    const stmt = this.db.prepare(`
-      INSERT INTO conversation_history (session_id, role, content, timestamp)
-      VALUES (?, ?, ?, ?)
-    `);
-
-    stmt.run(
-      sessionId,
-      turn.role,
-      typeof turn.content === 'string' ? turn.content : JSON.stringify(turn.content),
-      turn.timestamp
-    );
+    this.db
+      .insert(conversationHistory)
+      .values({
+        sessionId,
+        role: turn.role,
+        content: typeof turn.content === 'string' ? turn.content : JSON.stringify(turn.content),
+        timestamp: new Date(turn.timestamp),
+      })
+      .run();
   }
 
   /**
    * Get conversation history for a session
    */
   getConversationHistory(sessionId: string): Claude.ConversationTurn[] {
-    const stmt = this.db.prepare(`
-      SELECT role, content, timestamp
-      FROM conversation_history
-      WHERE session_id = ?
-      ORDER BY timestamp ASC
-    `);
+    const results = this.db
+      .select({
+        role: conversationHistory.role,
+        content: conversationHistory.content,
+        timestamp: conversationHistory.timestamp,
+      })
+      .from(conversationHistory)
+      .where(eq(conversationHistory.sessionId, sessionId))
+      .orderBy(conversationHistory.timestamp)
+      .all();
 
-    const rows = stmt.all(sessionId) as any[];
-
-    return rows.map(row => ({
-      role: row.role,
+    return results.map((row) => ({
+      role: row.role as 'user' | 'assistant',
       content: row.content,
-      timestamp: row.timestamp,
+      timestamp: row.timestamp.getTime(),
     }));
   }
 
@@ -165,44 +173,42 @@ export class SessionStore {
    * Add a stream message to the database
    */
   addStreamMessage(sessionId: string, message: Claude.StreamMessage): void {
-    const stmt = this.db.prepare(`
-      INSERT INTO stream_messages (session_id, message_type, message_data, timestamp)
-      VALUES (?, ?, ?, ?)
-    `);
-
-    stmt.run(
-      sessionId,
-      message.type,
-      JSON.stringify(message),
-      Date.now()
-    );
+    this.db
+      .insert(streamMessages)
+      .values({
+        sessionId,
+        messageType: message.type,
+        messageData: JSON.stringify(message),
+        timestamp: new Date(),
+      })
+      .run();
   }
 
   /**
    * Get stream messages for a session
    */
   getStreamMessages(sessionId: string): Claude.StreamMessage[] {
-    const stmt = this.db.prepare(`
-      SELECT message_data
-      FROM stream_messages
-      WHERE session_id = ?
-      ORDER BY timestamp ASC
-    `);
+    const results = this.db
+      .select({
+        messageData: streamMessages.messageData,
+      })
+      .from(streamMessages)
+      .where(eq(streamMessages.sessionId, sessionId))
+      .orderBy(streamMessages.timestamp)
+      .all();
 
-    const rows = stmt.all(sessionId) as any[];
-
-    return rows.map(row => JSON.parse(row.message_data));
+    return results.map((row) => JSON.parse(row.messageData));
   }
 
   /**
    * Delete a session and all its data
    */
   deleteSession(sessionId: string): boolean {
-    const stmt = this.db.prepare(`
-      DELETE FROM sessions WHERE id = ?
-    `);
+    const result = this.db
+      .delete(sessions)
+      .where(eq(sessions.id, sessionId))
+      .run();
 
-    const result = stmt.run(sessionId);
     return result.changes > 0;
   }
 
@@ -210,31 +216,34 @@ export class SessionStore {
    * List all session IDs
    */
   listSessions(): string[] {
-    const stmt = this.db.prepare(`
-      SELECT id FROM sessions ORDER BY last_active DESC
-    `);
+    const results = this.db
+      .select({ id: sessions.id })
+      .from(sessions)
+      .orderBy(desc(sessions.lastActive))
+      .all();
 
-    const rows = stmt.all() as any[];
-    return rows.map(row => row.id);
+    return results.map((row) => row.id);
   }
 
   /**
    * Get the most recently active session
    */
   getLastSession(): Claude.SessionMetadata | null {
-    const stmt = this.db.prepare(`
-      SELECT * FROM sessions ORDER BY last_active DESC LIMIT 1
-    `);
+    const result = this.db
+      .select()
+      .from(sessions)
+      .orderBy(desc(sessions.lastActive))
+      .limit(1)
+      .get();
 
-    const row = stmt.get() as any;
-    if (!row) return null;
+    if (!result) return null;
 
     return {
-      id: row.id,
-      created_at: row.created_at,
-      last_active: row.last_active,
-      turns: row.turns,
-      total_cost_usd: row.total_cost_usd,
+      id: result.id,
+      created_at: result.createdAt.getTime(),
+      last_active: result.lastActive.getTime(),
+      turns: result.turns,
+      total_cost_usd: result.totalCostUsd,
     };
   }
 
@@ -258,7 +267,7 @@ export class SessionStore {
    */
   importSessionData(data: Claude.SessionData): void {
     // Use transaction for atomicity
-    const transaction = this.db.transaction(() => {
+    this.db.transaction((tx) => {
       // Insert session metadata
       this.upsertSession(data.metadata);
 
@@ -267,17 +276,15 @@ export class SessionStore {
         this.addConversationTurn(data.metadata.id, turn);
       }
     });
-
-    transaction();
   }
 
   /**
    * Clear all sessions
    */
   clearAll(): void {
-    this.db.exec('DELETE FROM sessions');
-    this.db.exec('DELETE FROM conversation_history');
-    this.db.exec('DELETE FROM stream_messages');
+    this.db.delete(sessions).run();
+    this.db.delete(conversationHistory).run();
+    this.db.delete(streamMessages).run();
   }
 
   /**
@@ -289,15 +296,29 @@ export class SessionStore {
     totalStreamMessages: number;
     databaseSize: number;
   } {
-    const totalSessions = (this.db.prepare('SELECT COUNT(*) as count FROM sessions').get() as any).count;
-    const totalMessages = (this.db.prepare('SELECT COUNT(*) as count FROM conversation_history').get() as any).count;
-    const totalStreamMessages = (this.db.prepare('SELECT COUNT(*) as count FROM stream_messages').get() as any).count;
+    const totalSessions =
+      this.db
+        .select({ count: sql<number>`count(*)` })
+        .from(sessions)
+        .get()?.count ?? 0;
+
+    const totalMessages =
+      this.db
+        .select({ count: sql<number>`count(*)` })
+        .from(conversationHistory)
+        .get()?.count ?? 0;
+
+    const totalStreamMessages =
+      this.db
+        .select({ count: sql<number>`count(*)` })
+        .from(streamMessages)
+        .get()?.count ?? 0;
 
     // Get database file size (if not in-memory)
     let databaseSize = 0;
     try {
-      if (this.db.name !== ':memory:') {
-        const stats = statSync(this.db.name);
+      if (this.sqlite.name !== ':memory:') {
+        const stats = statSync(this.sqlite.name);
         databaseSize = stats.size;
       }
     } catch {
@@ -316,22 +337,22 @@ export class SessionStore {
    * Close the database connection
    */
   close(): void {
-    this.db.close();
+    this.sqlite.close();
   }
 
   /**
    * Run a database checkpoint (for WAL mode)
    */
   checkpoint(): void {
-    this.db.exec('PRAGMA wal_checkpoint(TRUNCATE)');
+    this.sqlite.exec('PRAGMA wal_checkpoint(TRUNCATE)');
   }
 
   /**
    * Optimize database (vacuum and analyze)
    */
   optimize(): void {
-    this.db.exec('VACUUM');
-    this.db.exec('ANALYZE');
+    this.sqlite.exec('VACUUM');
+    this.sqlite.exec('ANALYZE');
   }
 }
 
