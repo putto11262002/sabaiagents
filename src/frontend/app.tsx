@@ -10,6 +10,7 @@ import "./styles/app.css";
 
 // Import routes
 import Layout from "./routes/layout.js";
+import Dashboard from "./routes/dashboard.js";
 import Home from "./routes/home.js";
 import About from "./routes/about.js";
 import { PromptEditorPage } from "./routes/prompt-editor.js";
@@ -19,7 +20,8 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Layout />}>
-          <Route index element={<Home />} />
+          <Route index element={<Dashboard />} />
+          <Route path="home" element={<Home />} />
           <Route path="about" element={<About />} />
           <Route path="prompt-editor" element={<PromptEditorPage />} />
         </Route>
